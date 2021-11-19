@@ -1,13 +1,41 @@
-AllCops:
-  TargetRubyVersion: 2.4
+Layout/ExtraSpacing:
+  ForceEqualSignAlignment: true
 
-Style/StringLiterals:
-  Enabled: true
-  EnforcedStyle: double_quotes
+Layout/IndentationWidth:
+  IgnoredPatterns: []
 
-Style/StringLiteralsInInterpolation:
-  Enabled: true
-  EnforcedStyle: double_quotes
+Layout/HashAlignment:
+  EnforcedColonStyle: table
+  EnforcedHashRocketStyle: table
 
 Layout/LineLength:
-  Max: 120
+  Max: 100
+  IgnoreCopDirectives: true
+
+Layout/EmptyLineAfterMagicComment:
+  Enabled: true
+
+Metrics/MethodLength:
+  Max: 15
+
+Metrics/BlockLength:
+  Exclude: ["spec/**/*_spec.rb"]
+
+Style/ModuleFunction:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  SafeAutoCorrect: true
+
+Style/StringLiterals:
+    EnforcedStyle: "double_quotes"

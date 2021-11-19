@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
-require_relative "polyn/version"
+require "concurrent/actor"
+require "semantic_logger"
 
-module Polyn
-  class Error < StandardError; end
-  # Your code goes here...
-end
+require_relative "polyn/version"
+require_relative "polyn/supervisor"

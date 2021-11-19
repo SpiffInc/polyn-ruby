@@ -1,7 +1,18 @@
 # Polyn
 
-Polyn is a dead simple service framework built on top of [Apache Kafka](https://github.com/apache/kafka). It is designed
-to be language agnostic and provides a simple, yet powerful, abstraction layer for building services.
+Polyn is a dead simple service framework designed to be language agnostic while
+and providing a simple, yet powerful, abstraction layer for building reactive events
+based services.
+
+According to [Jonas Boner](http://jonasboner.com/), reactive Microservices require you to:
+1. Follow the principle “do one thing, and one thing well” in defining service boundaries
+2. Isolate the services
+3. Ensure services act autonomously
+4. Embrace asynchronous message passing 
+5. Stay mobile, but addressable 
+6. Design for the required level of consistency
+
+It is the aim of Polyn to provide for this in a consistent way.
 
 ## Installation
 
@@ -18,6 +29,12 @@ And then execute:
 Or install it yourself as:
 
     $ gem install polyn
+
+## What it provides
+
+
+
+
 
 ## Usage
 
