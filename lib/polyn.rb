@@ -5,3 +5,4 @@ require "semantic_logger"
 
 require_relative "polyn/version"
 require_relative "polyn/supervisor"
+require_relative "polyn/service"
