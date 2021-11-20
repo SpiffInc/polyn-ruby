@@ -91,12 +91,8 @@ module Polyn
       end
     end
 
-    ##
-    # @param transporter [Poly::Transporter] the transporter to use for sending events
-    def initialize(transporter: nil)
+    def initialize
       super()
-      @transporter = transporter
-      validate_service
       start
     end
 
@@ -107,29 +103,6 @@ module Polyn
     end
 
     private
-
-    attr_reader :transporter
-
-    def start
-      logger.info("starting")
-      subscribe_events
-    end
-
-    def subscribe_events
-      logger.info("subscribing to all events")
-      self.class.events.each_value { |event| subscribe_event(event) }
-    end
-
-    def subscribe_event(event)
-      logger.info("subscribing to event '#{event.topic}'")
-    end
-
-    def validate_service
-      return unless name.nil? || name == ""
-
-      raise Errors::ServiceNameError, name
-    end
-
     def name
       self.class.name
     end
