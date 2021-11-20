@@ -25,9 +25,9 @@ module Polyn
       ##
       # Deep symbolize keys of a hash.
       #
-      # @param hash [Hash] The hash to symbolize.
+      # @param hash [::Hash] The hash to symbolize.
       #
-      # @return [Hash] The symbolized hash.
+      # @return [::Hash] The symbolized hash.
       def self.deep_symbolize_keys(hash)
         hash.each_with_object({}) do |(key, value), result|
           result[key.to_sym] = value.is_a?(::Hash) ? deep_symbolize_keys(value) : value
@@ -37,9 +37,9 @@ module Polyn
       ##
       # Deep stringifies keys
       #
-      # @param hash [Hash] The hash to stringify.
+      # @param hash [::Hash] The hash to stringify.
       #
-      # @return [Hash] The stringified hash.
+      # @return [::Hash] The stringified hash.
       def self.deep_stringify_keys(hash)
         hash.each_with_object({}) do |(key, value), result|
           result[key.to_s] = value.is_a?(::Hash) ? deep_stringify_keys(value) : value
@@ -49,13 +49,26 @@ module Polyn
       ##
       # Deep camelize keys
       #
-      # @param hash [Hash] The hash to camelize.
+      # @param hash [::Hash] The hash to camelize.
       #
-      # @return [Hash] The camelized hash.
+      # @return [::Hash] The camelized hash.
       def self.deep_camelize_keys(hash)
         hash.each_with_object({}) do |(key, value), result|
           result[String.to_camel_case(key)] =
             value.is_a?(::Hash) ? deep_camelize_keys(value) : value
+        end
+      end
+
+      ##
+      # Deep snake cases keys
+      #
+      # @param hash [::Hash] The hash to snake case.
+      #
+      # @return [::Hash] The snake cased hash.
+      def self.deep_snake_case_keys(hash)
+        hash.each_with_object({}) do |(key, value), result|
+          result[String.to_snake_case(key)] =
+            value.is_a?(::Hash) ? deep_snake_case_keys(value) : value
         end
       end
     end

@@ -53,4 +53,12 @@ RSpec.describe Polyn::Utils::Hash do
       })
     end
   end
+
+  describe "#deep_snake_case_keys" do
+    it "should deep snake case the keys" do
+      expect(described_class.deep_symbolize_keys({ "aBcDe" => 1 })).to eq({
+        "a_bc_de" => 1,
+      })
+    end
+  end
 end
