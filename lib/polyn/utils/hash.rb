@@ -1,44 +1,61 @@
 # frozen_string_literal: true
 
+# Copyright 2021-2022 Jarod Reid
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# software and associated documentation files (the "Software"), to deal in the Software
+# without restriction, including without limitation the rights to use, copy, modify, merge,
+# publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+# persons to whom the Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+# NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 module Polyn
   module Utils
+    ##
+    # Utilities for hash manipulation.
     module Hash
       ##
       # Deep symbolize keys of a hash.
+      #
+      # @param hash [Hash] The hash to symbolize.
+      #
+      # @return [Hash] The symbolized hash.
       def self.deep_symbolize_keys(hash)
         hash.each_with_object({}) do |(key, value), result|
-          value       = deep_symbolize_keys(value) if value.is_a? Hash
-          result[begin
-            key.to_sym
-          rescue StandardError
-            key
-          end || key] = value
+          result[key.to_sym] = value.is_a?(::Hash) ? deep_symbolize_keys(value) : value
         end
       end
 
       ##
       # Deep stringifies keys
+      #
+      # @param hash [Hash] The hash to stringify.
+      #
+      # @return [Hash] The stringified hash.
       def self.deep_stringify_keys(hash)
         hash.each_with_object({}) do |(key, value), result|
-          value       = deep_stringify_keys(value) if value.is_a? Hash
-          result[begin
-            key.to_s
-          rescue StandardError
-            key
-          end || key] = value
+          result[key.to_s] = value.is_a?(::Hash) ? deep_stringify_keys(value) : value
         end
       end
 
       ##
       # Deep camelize keys
+      #
+      # @param hash [Hash] The hash to camelize.
+      #
+      # @return [Hash] The camelized hash.
       def self.deep_camelize_keys(hash)
         hash.each_with_object({}) do |(key, value), result|
-          value       = deep_camelize_keys(value) if value.is_a? Hash
-          result[begin
-            Utils::String.camelize(key.to_s)
-          rescue StandardError
-            key
-          end || key] = value
+          result[String.to_camel_case(key)] =
+            value.is_a?(::Hash) ? deep_camelize_keys(value) : value
         end
       end
     end
