@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "transit"
+
 module Polyn
   ##
   # Supervises Polyn Services
@@ -7,44 +9,59 @@ module Polyn
     include SemanticLogger::Loggable
 
     def self.start(options = {})
-      spawn(:root, options)
-      loop do
-        sleep 1
+      @main    = spawn(:root, options)
+      @running = true
+
+      Signal.trap("INT") do
+        puts "Terminating..."
+        shutdown
       end
+
+      sleep 1 while @running
+    end
+
+    def self.shutdown
+      logger.info("received 'SIGINT', shutting down...")
+      @running = false
     end
 
     def initialize(options = {})
       super()
       @logger    = options[:log_options]
-      @services  = options.fetch(:services, [])
-
       set_semantic_logger
+      logger.info "initializing"
+
+      @services  = options.fetch(:services, [])
+      @transit   = Transit.new(options.fetch(:transit, {}))
+
       start
     end
 
     def start
       logger.info("starting")
-      start_services
+      register_services
+    end
+
+    def default_executor
+      Concurrent.global_fast_executor
     end
 
     private
 
-    attr_reader :services, :container, :log_options
+    attr_reader :services, :container, :log_options, :transit
 
-    def start_services
-      logger.info("starting services")
-      services.each {|service| start_service(service) }
+    def register_services
+      logger.info("registering services")
+      services.each { |service| register_service(service) }
     end
 
-    def start_service(service)
-      logger.info("starting service '#{service}'")
-      service.spawn(service.name)
+    def register_service(service)
+      transit.register(service)
     end
 
     def set_semantic_logger
       if log_options == $stdout || log_options.nil?
         SemanticLogger.add_appender(io: $stdout, formatter: :color)
-      else
       end
     end
   end

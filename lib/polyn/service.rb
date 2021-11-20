@@ -16,7 +16,7 @@ module Polyn
     class EventHandler
       ##
       # @return [String] The topic this event handler is subscribed to.
-      attr_reader :topic
+      attr_reader :topic, :service
 
       def initialize(service, topic, method, options = {})
         @topic   = topic
@@ -36,6 +36,12 @@ module Polyn
       attr_reader :events
 
       ##
+      # @return [Symbol] the service of the current thread
+      def current_service_name
+        Thread.local[:polyn_current_service_name] || :root
+      end
+
+      ##
       # Defines an event handler for a service for the specified topic
       #
       # @param topic [String] the topic to listen on
@@ -44,6 +50,15 @@ module Polyn
         @events      ||= {}
         validate(topic, method)
         @events[topic] = EventHandler.new(self, topic, method)
+      end
+
+      ##
+      # Gets or sets the service name
+      #
+      # @param name [String] the service name, if nil then the service name is returned
+      def name(name = nil)
+        @service_name = name if name
+        @service_name
       end
 
       ##
@@ -62,6 +77,18 @@ module Polyn
         raise ArgumentError,
               "Topic must be a String or Regexp, instead it is a '#{topic.class}'"
       end
+
+      ##
+      # Sets the service thread pool
+      #
+      # @param pool [Concurrent::ThreadPoolExecutor] the thread pool to use
+      def pool=(pool)
+        @@pool = pool
+      end
+
+      def pool
+        @@pool
+      end
     end
 
     ##
@@ -69,25 +96,42 @@ module Polyn
     def initialize(transporter: nil)
       super()
       @transporter = transporter
+      validate_service
       start
     end
 
-    def start
-      logger.info("starting")
-      subscribe_events
+    ##
+    # @private
+    def default_executor
+      self.class.pool
     end
 
     private
 
     attr_reader :transporter
 
+    def start
+      logger.info("starting")
+      subscribe_events
+    end
+
     def subscribe_events
       logger.info("subscribing to all events")
-      self.class.events.values.each { |event| subscribe_event(event) }
+      self.class.events.each_value { |event| subscribe_event(event) }
     end
 
     def subscribe_event(event)
       logger.info("subscribing to event '#{event.topic}'")
+    end
+
+    def validate_service
+      return unless name.nil? || name == ""
+
+      raise Errors::ServiceNameError, name
+    end
+
+    def name
+      self.class.name
     end
   end
 end

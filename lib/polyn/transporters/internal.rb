@@ -6,7 +6,7 @@ module Polyn
   module Transporters
     ##
     # Fake transporter for use in testing
-    class Fake < Base
+    class Internal < Base
       def initialize(options = {})
         super(options)
         @subscriptions = []

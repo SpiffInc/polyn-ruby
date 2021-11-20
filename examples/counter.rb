@@ -3,6 +3,8 @@
 require_relative "../lib/polyn"
 
 class Counter < Polyn::Service
+  name "example.counter"
+
   event "increment", :increment
 
   def initialize(initial_value = 0)
@@ -16,5 +18,5 @@ class Counter < Polyn::Service
 end
 
 Polyn::Supervisor.start(
-  services: [Counter]
-).join
+  services: [Counter],
+)

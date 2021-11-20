@@ -5,7 +5,7 @@ module Polyn
     ##
     # The Base transporter defines the interface for all other transporters.
     # @abstract
-    class Base
+    class Base < Concurrent::Actor::RestartingContext
       def initialize(options = {})
         @options = options
       end
@@ -24,6 +24,12 @@ module Polyn
 
       def subscribe(topic, &block)
         raise NotImplementedError
+      end
+
+      private
+
+      def default_executor
+        Concurrent.global_io_executor
       end
     end
   end
