@@ -16,6 +16,7 @@ module Polyn
       logger.debug("loading transporter for config '#{transporter_config}'")
       @transporter       = Transporters.for(transporter_config)
       logger.info("transporter set to '#{transporter.name}'")
+      @serializer        = Serializers.for(:json)
 
       @pool = Concurrent::ThreadPoolExecutor.new({
                                                    min_threads: 5,
@@ -49,6 +50,7 @@ module Polyn
 
     attr_reader :services, :events, :transporter, :pool
 
+
     def register_events_for(service)
       service.events.each_value { |event| register_event(event) }
     end
@@ -57,6 +59,9 @@ module Polyn
       logger.info("registering event '#{event.topic}' for service '#{event.service.name}'")
       events[event.topic] ||= []
       events[event.topic] << event
+      transporter.subscribe(event.topic) do |payload|
+        message = Message.new(serializer.deserialize(payload))
+      end
     end
   end
 end
