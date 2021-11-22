@@ -22,7 +22,7 @@ require_relative "base"
 module Polyn
   module Transporters
     ##
-    # Fake transporter for use in testing
+    # Internal transporter for use in testing.
     class Internal < Base
       def initialize(transit, options = {})
         super(transit, options)
