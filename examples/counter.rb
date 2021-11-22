@@ -29,9 +29,9 @@ class Counter < Polyn::Service
     @value = initial_value
   end
 
-  def increment
+  def increment(*args)
     @value += 1
-    puts(@value)
+    logger.info("incremented to #{@value}")
   end
 end
 
@@ -40,6 +40,8 @@ t = Thread.new do
     services: [Counter],
   )
 end
+
+Polyn.wait
 
 Polyn.publish("increment", {})
 

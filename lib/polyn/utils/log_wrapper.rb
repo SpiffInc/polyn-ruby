@@ -17,17 +17,14 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "json"
-
 module Polyn
-  module Serializers
-    class Json < Base
-      def serialize(data)
-        JSON.dump(data)
-      end
-
-      def deserialize(data)
-        JSON.parse(data)
+  module Utils
+    class LogWrapper
+      def call(level, actor, *args, &block)
+        level += 1 unless level.zero?
+        SemanticLogger["ACTOR - #{actor}"].send(
+          SemanticLogger::Levels::LEVELS[level].to_sym, *args, &block
+        )
       end
     end
   end

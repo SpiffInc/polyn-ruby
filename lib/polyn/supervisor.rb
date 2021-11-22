@@ -28,8 +28,10 @@ module Polyn
     include SemanticLogger::Loggable
     extend Forwardable
 
-    def_delegators :@transit, :publish
-
+    ##
+    # Spawns the `Supervisor`
+    #
+    # @return [Concurrent::Actor::Reference]
     def self.spawn(options = {})
       super(:supervisor, options)
     end
@@ -46,16 +48,28 @@ module Polyn
       logger.info "initializing"
 
       @services  = options.fetch(:services, [])
-      @transit   = Transit.new(options.fetch(:transit, {}))
+      @transit   = Transit.spawn(:transit, options.fetch(:transit, {}))
 
       start
     end
 
-    def start
-      logger.info("starting")
-      register_services
+    ##
+    # Publishes a message to the transit `Actor`
+    #
+    # @param topic [String] the topic to publish to
+    # @param payload [Hash] the message to publish
+    def publish(topic, payload)
+      transit << [:publish, topic, payload]
     end
 
+    ##
+    # @private
+    def on_message((msg, *args))
+      send(msg, *args)
+    end
+
+    ##
+    # @private
     def default_executor
       Concurrent.global_fast_executor
     end
@@ -64,19 +78,27 @@ module Polyn
 
     attr_reader :services, :container, :log_options, :transit
 
+    def start
+      logger.info("starting")
+      register_services
+    end
+
     def register_services
       logger.info("registering services")
       services.each { |service| register_service(service) }
     end
 
     def register_service(service)
-      transit.register(service)
+      transit << [:register, service]
     end
 
     def set_semantic_logger
       if log_options == $stdout || log_options.nil?
         SemanticLogger.add_appender(io: $stdout, formatter: :color)
+        SemanticLogger.default_level = :trace
       end
+
+      Concurrent.global_logger = Utils::LogWrapper.new
     end
   end
 end

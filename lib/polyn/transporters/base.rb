@@ -23,15 +23,15 @@ module Polyn
     # The Base transporter defines the interface for all other transporters.
     # @abstract
     class Base < Concurrent::Actor::RestartingContext
+      include SemanticLogger::Loggable
+
       def initialize(transit, _options = {})
+        super()
         @transit = transit
       end
 
       def on_message((msg, *args))
-        case msg
-        when :subscribe
-          public_send(:subscribe, *args)
-        end
+        send(msg, *args)
       end
 
       def connect

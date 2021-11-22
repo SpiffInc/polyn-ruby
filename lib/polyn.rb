@@ -42,6 +42,12 @@ module Polyn
     sleep 1 while @running
   end
 
+  def self.wait
+    puts "waiting"
+    sleep 1 until @running
+    puts "pone waiting"
+  end
+
   def self.publish(topic, message)
     @supervisor << [:publish, topic, message]
   end

@@ -33,9 +33,9 @@ module Polyn
       logger.info("starting")
       configure_transporter(options.fetch(:transporter, :internal))
 
-      @serializer        = Serializers.for(:json)
+      @serializer        = Serializers.for(:json).new
 
-      logger.info("serializer set to '#{serializer.name}'")
+      logger.info("serializer set to '#{serializer.class.name}'")
 
       @pool = Concurrent::ThreadPoolExecutor.new({
         min_threads: 5,
@@ -49,19 +49,21 @@ module Polyn
       @events            = {}
     end
 
+    ##
+    # Publishes an event to the `Transporter`.
+    #
+    # @param topic [String] the topic to publish to
     def publish(topic, payload)
       logger.info("publishing to topic '#{topic}'")
       serialized = serializer.serialize(payload)
-      transporter.publish(topic, serialized)
+      transporter << [:publish, topic, serialized]
     end
 
     ##
     # @private
     def on_message((msg, *args))
-      public_send(msg, *args)
+      send(msg, *args)
     end
-
-
 
     ##
     # Registers a service, and any events it will consume.
@@ -77,12 +79,17 @@ module Polyn
 
     attr_reader :services, :events, :transporter, :pool, :serializer
 
+    def receive(topic, payload)
+      logger.info("received '#{payload}' on '#{topic}'")
+      events[topic].each { |e| e.call(payload) }
+    end
+
     def configure_transporter(options)
       transporter_class = infer_transporter(options)
       logger.info("transporter set to '#{transporter_class.name}'")
       @transporter      = transporter_class.spawn(
         "transporter",
-        self,
+        Concurrent::Actor.current,
         transporter_config_from(options),
       )
     end
