@@ -17,32 +17,17 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "concurrent/actor"
-require "semantic_logger"
+require "spec_helper"
 
-require_relative "polyn/version"
-require_relative "polyn/supervisor"
-require_relative "polyn/service"
-require_relative "polyn/errors"
-require_relative "polyn/transporters"
-require_relative "polyn/utils"
-require_relative "polyn/serializers"
+RSpec.describe Polyn::Transporters::Internal do
+  let(:transit) { double(Polyn::Transit) }
+  subject { described_class.new(transit, {}) }
 
-
-module Polyn
-  def self.start(options = {})
-    @supervisor = Supervisor.spawn(options)
-    @running    = true
-
-    Signal.trap("INT") do
-      puts "Terminating..."
-      shutdown
+  describe "publish and subscribe" do
+    it "should subscribe and publish" do
+      expect(transit).to receive(:<<).with([:receive, "test", "{}"])
+      subject.subscribe("test")
+      subject.publish("test", "{}")
     end
-
-    sleep 1 while @running
-  end
-
-  def self.publish(topic, message)
-    @supervisor << [:publish, topic, message]
   end
 end

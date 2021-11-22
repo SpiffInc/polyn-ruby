@@ -17,32 +17,29 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "concurrent/actor"
-require "semantic_logger"
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require_relative "polyn/version"
-require_relative "polyn/supervisor"
-require_relative "polyn/service"
-require_relative "polyn/errors"
-require_relative "polyn/transporters"
-require_relative "polyn/utils"
-require_relative "polyn/serializers"
-
+require_relative "serializers/base"
+require_relative "serializers/json"
 
 module Polyn
-  def self.start(options = {})
-    @supervisor = Supervisor.spawn(options)
-    @running    = true
-
-    Signal.trap("INT") do
-      puts "Terminating..."
-      shutdown
+  ##
+  # Serializers handle the serialization and deserialization of message payloads
+  module Serializers
+    ##
+    # Returns the serializer for the given type
+    #
+    # @param type [Symbol] The type of serializer.
+    #
+    # @return [Class<Polyn::Serializer] The serializer class.
+    def self.for(type)
+      case type
+      when :json
+        Json
+      else
+        raise ArgumentError, "Unknown serializer type: #{type}"
+      end
     end
-
-    sleep 1 while @running
-  end
-
-  def self.publish(topic, message)
-    @supervisor << [:publish, topic, message]
   end
 end
