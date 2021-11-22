@@ -19,6 +19,8 @@
 
 require_relative "../lib/polyn"
 
+require "benchmark"
+
 class Counter < Polyn::Service
   name "example.counter"
 
@@ -29,7 +31,7 @@ class Counter < Polyn::Service
     @value = initial_value
   end
 
-  def increment(*args)
+  def increment(*_args)
     @value += 1
     logger.info("incremented to #{@value}")
   end
@@ -43,6 +45,8 @@ end
 
 Polyn.wait
 
-Polyn.publish("increment", {})
+500.times do
+  Polyn.publish("increment", {})
+end
 
 t.join
