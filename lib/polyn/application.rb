@@ -60,6 +60,8 @@ module Polyn
     # @param topic [String] the topic to publish to
     # @param payload [Hash] the message to publish
     def publish(topic, payload)
+
+      payload = Utils::Hash.deep_camelize_keys(payload)
       errors = validator.validate(topic, payload)
 
       raise Errors::PayloadValidationError, errors unless errors.empty?

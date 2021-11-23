@@ -1,8 +1,8 @@
 {
   "type": "object",
-  "required": ["name", "age"],
+  "required": ["firstName"],
   "properties": {
-    "name": {
+    "firstName": {
       "type": "string"
     },
     "age": {

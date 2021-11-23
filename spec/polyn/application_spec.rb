@@ -60,5 +60,13 @@ RSpec.describe Polyn::Application do
         end.to raise_error(Polyn::Errors::PayloadValidationError)
       end
     end
+
+    context "snake cased keys" do
+      it "camel cases the keys before validation" do
+        expect do
+          subject.publish("test-event", { first_name: "value" })
+        end.to_not raise_exception
+      end
+    end
   end
 end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright 2021-2022 Jarod Reid
+# Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
 # software and associated documentation files (the "Software"), to deal in the Software
@@ -29,7 +29,7 @@ module Polyn
       #
       # @return [String] The camel cased string.
       def self.to_camel_case(str)
-        str    = str.split("_").map(&:capitalize).join
+        str    = str.to_s.split("_").map(&:capitalize).join
         str[0] = str[0].downcase
         str
       end
