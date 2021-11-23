@@ -19,21 +19,31 @@
 
 require_relative "base"
 
+require "json-schema"
+
 module Polyn
   module Validators
     ##
     # Validates the payload against a JSON Schema.
     class JsonSchema < Base
       ##
-      # @param file [Hash] The JSON Schema to validate against.
-      def initialize(file)
+      # @param config [Hash] the JSON Schema validator config.
+      def initialize(config)
         super()
-        @file = file
+        raise ArgumentError, "config must define a prefix" unless config.key?(:prefix)
+
+        @prefix = config.delete(:prefix)
+        @config = config
       end
 
-      def validate(data)
-        JSON::Validator.validate!(@schema, data)
+      def validate(event, data)
+        schema_location = File.join(prefix, "#{event}.json")
+        JSON::Validator.fully_validate(schema_location, data, config)
       end
+
+      private
+
+      attr_reader :prefix, :config
     end
   end
 end

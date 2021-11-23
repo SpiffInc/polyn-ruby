@@ -54,7 +54,7 @@ module Polyn
     @application << [:publish, topic, payload]
   end
 
-  def configure_logger(log_options)
+  def self.configure_logger(log_options)
     if log_options == $stdout
       SemanticLogger.add_appender(io: $stdout, formatter: :color)
       SemanticLogger.default_level = :trace

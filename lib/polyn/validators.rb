@@ -23,34 +23,9 @@ require "addressable"
 # Validators are used to validate messages being broadcasted to and from Polyn
 # Applications.
 module Validators
-  # Regex detects if string is a URI
-  URI_REGEX = %r{^\w+://.+}.freeze
+  extend SemanticLogger::Loggable
 
-  def self.for(config)
-    if config.is_a?(String) && URI_REGEX.match?(config)
-      for_uri(config)
-    else
-      raise ArgumentError, "Invalid URI"
-    end
-  end
-
-  def self.for_uri(uri)
-    uri = Addressable::URI.parse(uri)
-
-    case uri.scheme
-    when "file"
-      for_file(uri.path, uri.extname)
-    end
-  end
-
-  def self.for_file(path, extension)
-    case extension
-    when ".json"
-      require "json-schema"
-      load File.expand_path("validators/json_schema_file.rb", __dir__)
-      Polyn::Validators::JsonSchemaFile.new(
-        File.expand_path(path),
-      )
-    end
+  def self.for((validator, _config))
+    raise ArgumentError, "No Validator specified" unless validator
   end
 end

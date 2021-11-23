@@ -1,10 +1,10 @@
 {
   "type": "object",
   "properties": {
-    "foo": {
+    "name": {
       "type": "string"
     },
-    "bar": {
+    "age": {
       "type": "integer"
     }
   }

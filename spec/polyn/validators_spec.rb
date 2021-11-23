@@ -23,7 +23,7 @@ RSpec.describe Validators do
   describe ".for" do
     it "loads and returns the JSON validator when provided a json file" do
       expect(
-        Validators.for("file://#{File.expand_path('../fixtures/schema.json', __dir__)}").class.name,
+        Validators.for("file://#{File.expand_path('../fixtures/test-event.json', __dir__)}").class.name,
       ).to eq("Polyn::Validators::JsonSchemaFile")
     end
   end
