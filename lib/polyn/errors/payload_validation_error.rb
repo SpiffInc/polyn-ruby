@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -17,42 +15,16 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
+module Polyn
+  module Errors
+    ##
+    # Called when a payload is invalid.
+    class PayloadValidationError < Error
+      attr_reader :errors
 
-require_relative "../../../lib/polyn/validators/json_schema"
-
-RSpec.describe Polyn::Validators::JsonSchema do
-  let(:validator) do
-    Polyn::Validators::JsonSchema.new(
-      prefix: File.expand_path("../../fixtures", __dir__),
-      file:   true,
-    )
-  end
-
-  describe "#validate" do
-    context "when the data is valid" do
-      let(:data) do
-        {
-          "name" => "John Doe",
-          "age"  => 30,
-        }
-      end
-
-      it "returns true" do
-        expect(validator.validate("test-event", data)).to eq([])
-      end
-    end
-
-    context "when the data is invalid" do
-      let(:data) do
-        {
-          "name" => "John Doe",
-          "age"  => "1",
-        }
-      end
-
-      it "returns false" do
-        expect(validator.validate("test-event", data)).to_not be_empty
+      def initialize(errors)
+        @errors = errors
+        super("Event payload could not be validated:\n#{errors.inspect}")
       end
     end
   end

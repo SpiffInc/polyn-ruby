@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright 2021-2022 Jarod Reid
+# Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
 # software and associated documentation files (the "Software"), to deal in the Software
@@ -19,13 +19,20 @@
 
 require "addressable"
 
-##
-# Validators are used to validate messages being broadcasted to and from Polyn
-# Applications.
-module Validators
-  extend SemanticLogger::Loggable
+module Polyn
 
-  def self.for((validator, _config))
-    raise ArgumentError, "No Validator specified" unless validator
+  ##
+  # Validators are used to validate messages being broadcast to and from Polyn
+  # Applications.
+  module Validators
+    extend SemanticLogger::Loggable
+
+    ##
+    # @return [Polyn::Validators::Base] the configured validator.
+    def self.for((validator, config))
+      raise ArgumentError, "No Validator specified" unless validator
+
+      validator.new(config)
+    end
   end
 end

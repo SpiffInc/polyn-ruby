@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright 2021-2022 Jarod Reid
+# Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
 # software and associated documentation files (the "Software"), to deal in the Software
@@ -43,12 +43,12 @@ module Polyn
 
     ##
     # @param name [String] The name of the application.
-    def initialize(name:, validator: JSON::Validator, services: [], transit: {})
+    def initialize(name:, validator: nil, services: [], transit: {})
       super()
       logger.info "initializing"
       @name = name
 
-      configure_validtor(validator)
+      configure_validator(validator)
 
       @service_manager = ServiceManager.spawn(:service_manager, services)
       @transit         = Transit.spawn(:transit, service_manager, **transit)
@@ -60,6 +60,10 @@ module Polyn
     # @param topic [String] the topic to publish to
     # @param payload [Hash] the message to publish
     def publish(topic, payload)
+      errors = validator.validate(topic, payload)
+
+      raise Errors::PayloadValidationError, errors unless errors.empty?
+
       transit << [:publish, topic, payload]
     end
 
@@ -77,10 +81,10 @@ module Polyn
 
     private
 
-    attr_reader :service_manager, :container, :log_options, :transit
+    attr_reader :service_manager, :container, :log_options, :transit, :validator
 
     def configure_validator(validator)
-      Validators.for(validator)
+      @validator = Validators.for(validator)
     end
   end
 end

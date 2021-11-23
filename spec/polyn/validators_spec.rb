@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright 2021-2022 Jarod Reid
+# Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
 # software and associated documentation files (the "Software"), to deal in the Software
@@ -19,12 +19,10 @@
 
 require "spec_helper"
 
-RSpec.describe Validators do
+RSpec.describe Polyn::Validators do
   describe ".for" do
-    it "loads and returns the JSON validator when provided a json file" do
-      expect(
-        Validators.for("file://#{File.expand_path('../fixtures/test-event.json', __dir__)}").class.name,
-      ).to eq("Polyn::Validators::JsonSchemaFile")
+    it "raises an ArgumentError when passed a nil value" do
+      expect { described_class.for(nil) }.to raise_error(ArgumentError)
     end
   end
 end

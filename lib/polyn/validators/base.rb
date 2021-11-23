@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright 2021-2022 Jarod Reid
+# Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
 # software and associated documentation files (the "Software"), to deal in the Software
@@ -25,8 +25,9 @@ module Polyn
     # @abstract
     class Base
       ##
+      # @param _event [String] The event name.
       # @param _payload [Hash] the payload to validate.
-      def validate(_payload)
+      def validate(_event, _payload)
         raise NotImplementedError
       end
     end
