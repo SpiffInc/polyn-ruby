@@ -43,7 +43,7 @@ module Polyn
 
     ##
     # @param name [String] The name of the application.
-    def initialize(name:, validator: nil, services: [], transit: {})
+    def initialize(name:, validator:, services: [], transit: {})
       super()
       logger.info "initializing"
       @name = name

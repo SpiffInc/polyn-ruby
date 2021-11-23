@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright 2021-2022 Jarod Reid
+# Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
 # software and associated documentation files (the "Software"), to deal in the Software
@@ -18,36 +18,47 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "spec_helper"
+require_relative "../../lib/polyn/validators/json_schema"
 
 RSpec.describe Polyn::Application do
   let(:service_manager) { double(Polyn::ServiceManager) }
   let(:transit) { double(Polyn::Transit) }
 
+  subject do
+    described_class.new(
+      name:      "MyApp",
+      validator: Polyn::Validators::JsonSchema.new(
+        prefix: File.expand_path("../fixtures", __dir__),
+        file:   true,
+      ),
+    )
+  end
+
   describe "#initialize" do
     it "requires and sets the name" do
-      app = described_class.new(name: "MyApp")
-      expect(app.name).to eq("MyApp")
+      expect(subject.name).to eq("MyApp")
     end
 
     it "sets up the service manager" do
       expect(Polyn::ServiceManager).to receive(:spawn).and_return(service_manager)
 
-      described_class.new(name: "MyApp")
+      subject
     end
 
     it "sets up the transit" do
       expect(Polyn::Transit).to receive(:spawn).and_return(service_manager)
 
-      described_class.new(name: "MyApp")
+      subject
     end
   end
 
   describe "#publish" do
-    it "passes the publish message to the transit actor" do
-      expect(Polyn::Transit).to receive(:spawn).and_return(service_manager)
-      expect(transit).to receive(:<<).with([:publish, "test", { foo: "bar" }])
-
-      described_class.new(name: "MyApp").publish("test", { foo: "bar" })
+    context "invalid payload" do
+      it "raises Polyn::Errors::ValidationError" do
+        expect do
+          subject.publish("test-event", { wrong: "payload" })
+        end.to raise_error(Polyn::Errors::PayloadValidationError)
+      end
     end
   end
 end

@@ -28,11 +28,13 @@ module Polyn
     extend SemanticLogger::Loggable
 
     ##
+    # @param config [Polyn:::Validators::Base] the validator configuration
+    #
     # @return [Polyn::Validators::Base] the configured validator.
-    def self.for((validator, config))
-      raise ArgumentError, "No Validator specified" unless validator
+    def self.for(config)
+      raise ArgumentError, "No Validator specified" unless config
 
-      validator.new(config)
+      return config if config.is_a?(Polyn::Validators::Base)
     end
   end
 end

@@ -24,7 +24,7 @@ require_relative "../../../lib/polyn/validators/json_schema"
 RSpec.describe Polyn::Validators::JsonSchema do
   let(:validator) do
     Polyn::Validators::JsonSchema.new(
-      prefix: File.expand_path("../../fixtures", __dir__),
+      prefix: file.expand_path("../../fixtures", __dir__),
       file:   true,
     )
   end
