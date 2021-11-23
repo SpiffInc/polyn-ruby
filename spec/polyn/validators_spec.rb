@@ -17,20 +17,14 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "securerandom"
+require "spec_helper"
 
-module Polyn
-  ##
-  # Represents a Polyn message.
-  class Message
-    def initialize(topic:, origin:, payload:, parent: nil, service: nil)
-      @topic      = topic
-      @payload    = payload
-      @service    = service
-      @origin     = origin
-      @trace      = []
-      @created_at = Time.utc.now
-      @uuid       = SecureRandom.uuid
+RSpec.describe Validators do
+  describe ".for" do
+    it "loads and returns the JSON validator when provided a json file" do
+      expect(
+        Validators.for("file://#{File.expand_path('../fixtures/schema.json', __dir__)}").class.name,
+      ).to eq("Polyn::Validators::JsonSchemaFile")
     end
   end
 end

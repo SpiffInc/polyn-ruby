@@ -19,7 +19,7 @@
 
 module Polyn
   module Utils
-    class LogWrapper
+    class ConcurrentLogger
       def call(level, actor, *args, &block)
         level += 1 unless level.zero?
         SemanticLogger["ACTOR - #{actor}"].send(

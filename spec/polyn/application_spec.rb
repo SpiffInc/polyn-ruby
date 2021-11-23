@@ -17,20 +17,37 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "securerandom"
+require "spec_helper"
 
-module Polyn
-  ##
-  # Represents a Polyn message.
-  class Message
-    def initialize(topic:, origin:, payload:, parent: nil, service: nil)
-      @topic      = topic
-      @payload    = payload
-      @service    = service
-      @origin     = origin
-      @trace      = []
-      @created_at = Time.utc.now
-      @uuid       = SecureRandom.uuid
+RSpec.describe Polyn::Application do
+  let(:service_manager) { double(Polyn::ServiceManager) }
+  let(:transit) { double(Polyn::Transit) }
+
+  describe "#initialize" do
+    it "requires and sets the name" do
+      app = described_class.new(name: "MyApp")
+      expect(app.name).to eq("MyApp")
+    end
+
+    it "sets up the service manager" do
+      expect(Polyn::ServiceManager).to receive(:spawn).and_return(service_manager)
+
+      described_class.new(name: "MyApp")
+    end
+
+    it "sets up the transit" do
+      expect(Polyn::Transit).to receive(:spawn).and_return(service_manager)
+
+      described_class.new(name: "MyApp")
+    end
+  end
+
+  describe "#publish" do
+    it "passes the publish message to the transit actor" do
+      expect(Polyn::Transit).to receive(:spawn).and_return(service_manager)
+      expect(transit).to receive(:<<).with([:publish, "test", { foo: "bar" }])
+
+      described_class.new(name: "MyApp").publish("test", { foo: "bar" })
     end
   end
 end

@@ -17,40 +17,41 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "forwardable"
-
 require_relative "transit"
+require_relative "service_manager"
 
 module Polyn
   ##
-  # Supervises Polyn Services
-  class Supervisor < Concurrent::Actor::RestartingContext
+  # A Polyn Application. Only a single instance of this class should be created per
+  # process.
+  class Application < Concurrent::Actor::RestartingContext
     include SemanticLogger::Loggable
-    extend Forwardable
 
     ##
-    # Spawns the `Supervisor`
-    #
-    # @return [Concurrent::Actor::Reference]
+    # @return [String] The name of the application.
+    attr_reader :name
+
+    ##
+    # @private
     def self.spawn(options = {})
       super(:supervisor, options)
     end
 
     def self.shutdown
       logger.info("received 'SIGINT', shutting down...")
-      @running = false
     end
 
-    def initialize(options = {})
+    ##
+    # @param name [String] The name of the application.
+    def initialize(name:, validator: JSON::Validator, services: [], transit: {})
       super()
-      @logger    = options[:log_options]
-      set_semantic_logger
       logger.info "initializing"
+      @name = name
 
-      @services  = options.fetch(:services, [])
-      @transit   = Transit.spawn(:transit, options.fetch(:transit, {}))
+      configure_validtor(validator)
 
-      start
+      @service_manager = ServiceManager.spawn(:service_manager, services)
+      @transit         = Transit.spawn(:transit, service_manager, **transit)
     end
 
     ##
@@ -76,29 +77,10 @@ module Polyn
 
     private
 
-    attr_reader :services, :container, :log_options, :transit
+    attr_reader :service_manager, :container, :log_options, :transit
 
-    def start
-      logger.info("starting")
-      register_services
-    end
-
-    def register_services
-      logger.info("registering services")
-      services.each { |service| register_service(service) }
-    end
-
-    def register_service(service)
-      transit << [:register, service]
-    end
-
-    def set_semantic_logger
-      if log_options == $stdout || log_options.nil?
-        SemanticLogger.add_appender(io: $stdout, formatter: :color)
-        SemanticLogger.default_level = :trace
-      end
-
-      Concurrent.global_logger = Utils::LogWrapper.new
+    def configure_validator(validator)
+      Validators.for(validator)
     end
   end
 end

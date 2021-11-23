@@ -12,7 +12,9 @@ According to [Jonas Boner](http://jonasboner.com/), reactive Microservices requi
 5. Stay mobile, but addressable 
 6. Design for the required level of consistency
 
-It is the aim of Polyn to provide for this in a consistent way.
+Polyn implements this pattern in a manner that can be applied to multiple programming
+languages, such as Ruby, Elixir, or Python, enabling you to build services that can
+communicate regardless of the language you use.
 
 ## Installation
 
@@ -30,15 +32,16 @@ Or install it yourself as:
 
     $ gem install polyn
 
-## What it provides
-
-
-
-
-
 ## Usage
 
-TODO: Write usage instructions here
+A Polyn `Application` is made up of one or more `Services`, where a service subscribes
+to one or more events.
+
+## Configuration
+
+| Key | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `:name` | `String` | true | | The name of the application |
 
 ## Development
 

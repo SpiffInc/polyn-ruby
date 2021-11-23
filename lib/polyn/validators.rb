@@ -17,20 +17,40 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "securerandom"
+require "addressable"
 
-module Polyn
-  ##
-  # Represents a Polyn message.
-  class Message
-    def initialize(topic:, origin:, payload:, parent: nil, service: nil)
-      @topic      = topic
-      @payload    = payload
-      @service    = service
-      @origin     = origin
-      @trace      = []
-      @created_at = Time.utc.now
-      @uuid       = SecureRandom.uuid
+##
+# Validators are used to validate messages being broadcasted to and from Polyn
+# Applications.
+module Validators
+  # Regex detects if string is a URI
+  URI_REGEX = %r{^\w+://.+}.freeze
+
+  def self.for(config)
+    if config.is_a?(String) && URI_REGEX.match?(config)
+      for_uri(config)
+    else
+      raise ArgumentError, "Invalid URI"
+    end
+  end
+
+  def self.for_uri(uri)
+    uri = Addressable::URI.parse(uri)
+
+    case uri.scheme
+    when "file"
+      for_file(uri.path, uri.extname)
+    end
+  end
+
+  def self.for_file(path, extension)
+    case extension
+    when ".json"
+      require "json-schema"
+      load File.expand_path("validators/json_schema_file.rb", __dir__)
+      Polyn::Validators::JsonSchemaFile.new(
+        File.expand_path(path),
+      )
     end
   end
 end

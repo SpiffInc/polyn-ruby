@@ -19,4 +19,4 @@
 
 require_relative "utils/hash"
 require_relative "utils/string"
-require_relative "utils/log_wrapper"
+require_relative "utils/concurrent_logger"

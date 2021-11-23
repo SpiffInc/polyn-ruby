@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Copyright 2021-2022 Jarod Reid
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -17,20 +15,9 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "securerandom"
-
 module Polyn
-  ##
-  # Represents a Polyn message.
-  class Message
-    def initialize(topic:, origin:, payload:, parent: nil, service: nil)
-      @topic      = topic
-      @payload    = payload
-      @service    = service
-      @origin     = origin
-      @trace      = []
-      @created_at = Time.utc.now
-      @uuid       = SecureRandom.uuid
+  module Transporters
+    class PubSub < Base
     end
   end
 end

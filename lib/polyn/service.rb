@@ -20,7 +20,7 @@
 module Polyn
   ##
   # A service is an event handler on the Polyn event bus.
-  class Service < Concurrent::Actor::RestartingContext
+  class Service < Concurrent::Actor::Context
     include SemanticLogger::Loggable
 
     ##

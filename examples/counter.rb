@@ -45,8 +45,6 @@ end
 
 Polyn.wait
 
-500.times do
-  Polyn.publish("increment", {})
-end
+Polyn.publish("increment", {})
 
 t.join

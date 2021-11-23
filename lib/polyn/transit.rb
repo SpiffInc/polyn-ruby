@@ -19,8 +19,8 @@
 
 module Polyn
   ##
-  # Abstracts the transportation logic of Polyn. Transit tracks all registered services
-  # for the process and
+  # Abstracts the transportation logic of Polyn.  Transit works with the configured
+  # Transporter to send the message to the Event Bus.
   class Transit < Concurrent::Actor::RestartingContext
     include SemanticLogger::Loggable
 
@@ -28,14 +28,15 @@ module Polyn
     # @param options [Hash] the transit options
     # @option options [Symbol|String|Class<Transporters::Base>|Hash] :transporter the transporter
     #   configuration
-    def initialize(options = {})
+    def initialize(service_manager, options = {})
       super()
       logger.info("starting")
       configure_transporter(options.fetch(:transporter, :internal))
 
-      @serializer        = Serializers.for(:json).new
+      @service_manager = service_manager
+      @serializer      = Serializers.for(:json).new
 
-      logger.info("serializer set to '#{serializer.class.name}'")
+      logger.debug("serializer set to '#{serializer.class.name}'")
 
       @pool = Concurrent::ThreadPoolExecutor.new({
         min_threads: 5,
@@ -44,15 +45,13 @@ module Polyn
       })
 
       Service.pool = pool
-
-      @services          = {}
-      @events            = {}
     end
 
     ##
     # Publishes an event to the `Transporter`.
     #
     # @param topic [String] the topic to publish to
+    # @param payload [Hash] the message payload
     def publish(topic, payload)
       logger.info("publishing to topic '#{topic}'")
       serialized = serializer.serialize(payload)
@@ -65,19 +64,9 @@ module Polyn
       send(msg, *args)
     end
 
-    ##
-    # Registers a service, and any events it will consume.
-    #
-    # @param service [Class<Polyn::Service>] the service to register
-    def register(service)
-      logger.info("registering service '#{service.name}'")
-      services[service.name] = service
-      register_events_for(service)
-    end
-
     private
 
-    attr_reader :services, :events, :transporter, :pool, :serializer
+    attr_reader :transporter, :pool, :serializer
 
     def receive(topic, payload)
       logger.info("received '#{payload}' on '#{topic}'")
@@ -113,17 +102,6 @@ module Polyn
       when Symbol, String
         Transporters.const_get(Utils::String.to_class_name(options.to_s).to_sym)
       end
-    end
-
-    def register_events_for(service)
-      service.events.each_value { |event| register_event(event) }
-    end
-
-    def register_event(event)
-      logger.info("registering event '#{event.topic}' for service '#{event.service.name}'")
-      events[event.topic] ||= []
-      events[event.topic] << event
-      transporter << [:subscribe, event.topic]
     end
   end
 end

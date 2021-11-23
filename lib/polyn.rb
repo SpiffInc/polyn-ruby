@@ -21,7 +21,8 @@ require "concurrent/actor"
 require "semantic_logger"
 
 require_relative "polyn/version"
-require_relative "polyn/supervisor"
+require_relative "polyn/application"
+require_relative "polyn/validators"
 require_relative "polyn/service"
 require_relative "polyn/errors"
 require_relative "polyn/transporters"
@@ -29,26 +30,36 @@ require_relative "polyn/utils"
 require_relative "polyn/serializers"
 
 
+##
+# Polyn is a Reactive service framework.
 module Polyn
-  def self.start(options = {})
-    @supervisor = Supervisor.spawn(options)
-    @running    = true
+  ##
+  # Starts the application with the provided configuration.
+  #
+  # @param config [Hash] The configuration for the application.
+  # @options config [$stdout|Hash] :log_options The log options. If no options are
+  #   provided, $stdout will be used.
+  def self.start(config = {})
+    configure_logger(config.fetch(:log_options, $stdout))
+    @application = Application.spawn(config)
+  end
 
-    Signal.trap("INT") do
-      puts "Terminating..."
-      shutdown
+
+  ##
+  # Publishes a message on the Polyn network.
+  #
+  # @param topic [String] The topic to publish the message on.
+  # @param payload [Hash] The payload to publish.
+  def self.publish(topic, payload)
+    @application << [:publish, topic, payload]
+  end
+
+  def configure_logger(log_options)
+    if log_options == $stdout
+      SemanticLogger.add_appender(io: $stdout, formatter: :color)
+      SemanticLogger.default_level = :trace
     end
 
-    sleep 1 while @running
-  end
-
-  def self.wait
-    puts "waiting"
-    sleep 1 until @running
-    puts "pone waiting"
-  end
-
-  def self.publish(topic, message)
-    @supervisor << [:publish, topic, message]
+    Concurrent.global_logger = Utils::ConcurrentLogger.new
   end
 end
