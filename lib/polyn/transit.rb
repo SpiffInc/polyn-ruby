@@ -35,6 +35,7 @@ module Polyn
 
       @service_manager = service_manager
       @serializer      = Serializers.for(:json).new
+      @origin          = options.fetch(:origin)
 
       logger.debug("serializer set to '#{serializer.class.name}'")
 
@@ -54,7 +55,9 @@ module Polyn
     # @param payload [Hash] the message payload
     def publish(topic, payload)
       logger.info("publishing to topic '#{topic}'")
-      serialized = serializer.serialize(payload)
+      message = message_for(topic, payload)
+
+      serialized = serializer.serialize(message.for_transit)
       transporter << [:publish, topic, serialized]
     end
 
@@ -66,7 +69,15 @@ module Polyn
 
     private
 
-    attr_reader :transporter, :pool, :serializer
+    attr_reader :transporter, :pool, :serializer, :origin
+
+    def message_for(topic, payload)
+      Message.new(
+        origin:  origin,
+        topic:   topic,
+        payload: payload,
+      )
+    end
 
     def receive(topic, payload)
       logger.info("received '#{payload}' on '#{topic}'")

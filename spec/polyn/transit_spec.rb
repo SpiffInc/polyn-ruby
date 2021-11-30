@@ -17,43 +17,39 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "securerandom"
+require "spec_helper"
 
-module Polyn
-  ##
-  # Represents a Polyn message.
-  class Message
-    def initialize(topic:, origin:, payload:, parent: nil, service: nil)
-      @topic      = topic
-      @payload    = payload
-      @service    = service
-      @origin     = origin
-      @trace      = []
-      @created_at = Time.now.utc
-      @uuid       = SecureRandom.uuid
+RSpec.describe Polyn::Transit do
+  let(:service_manager) { instance_double(Polyn::ServiceManager) }
+  let(:transporter) { subject.instance_variable_get(:@transporter) }
+
+
+
+  subject do
+    Polyn::Transit.new(
+      service_manager,
+      origin:      "origin",
+      transporter: :internal,
+    )
+  end
+
+  before :each do
+    allow(Polyn::Message).to receive(:new).and_return(message)
+    allow(Polyn::Transporters::Internal).to receive(:new).and_return(transporter)
+  end
+
+  describe "#publish" do
+    let(:message) { instance_double(Polyn::Message, for_transit: message_for_transit) }
+    let(:message_for_transit) { double("MessageForTransit") }
+
+    let(:serializer) { subject.instance_variable_get(:@serializer) }
+    let(:serialized_message) { double("SerializedMessage") }
+
+    it "should publish the serialized data" do
+      expect(serializer).to receive(:serialize).with(message_for_transit).and_return(serialized_message)
+      expect(transporter).to receive(:<<).with([:publish, "foo", serialized_message])
+
+      subject.publish("foo", { foo: :bar })
     end
-
-    ##
-    # Prepares a message for transit.
-    #
-    # @return [Hash] a hash representation of the message provided for transit.
-    def for_transit
-      {
-        topic:     topic,
-        eventId:   uuid,
-        origin:    origin,
-        createdAt: created_at,
-        client:    {
-          type:    "ruby",
-          version: Polyn::VERSION,
-        },
-        trace:     trace,
-        payload:   payload,
-      }
-    end
-
-    private
-
-    attr_reader :topic, :payload, :service, :origin, :trace, :created_at, :uuid
   end
 end

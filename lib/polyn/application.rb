@@ -52,6 +52,10 @@ module Polyn
 
       configure_validator(validator)
 
+      transit.merge!({
+        origin: "#{name}@#{hostname}<#{pid}>",
+      })
+
       @service_manager = ServiceManager.spawn(:service_manager, services)
       @transit         = Transit.spawn(:transit, service_manager, **transit)
     end
