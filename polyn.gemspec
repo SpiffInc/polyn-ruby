@@ -23,11 +23,11 @@ Gem::Specification.new do |spec|
   spec.name          = "polyn"
   spec.version       = Polyn::VERSION
   spec.authors       = ["Jarod"]
-  spec.email         = ["therealfugu@gmail.com"]
+  spec.email         = ["jarod.reid@spiff.com"]
 
   spec.summary       = "Polyn Service Framework"
-  spec.description   = "A microservice built on top of Apache Kafka"
-  spec.homepage      = "https://github.com/polyn-services/polyn-rb"
+  spec.description   = "A lightweight reactive microservice framework."
+  spec.homepage      = "https://github.com/spiffinc/polyn-rb"
   spec.license       = "MIT"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.4.0")
 
