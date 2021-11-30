@@ -46,7 +46,9 @@ module Polyn
     def initialize(name:, validator:, services: [], transit: {})
       super()
       logger.info "initializing"
-      @name = name
+      @name     = name
+      @hostname = Socket.gethostname
+      @pid      = Process.pid
 
       configure_validator(validator)
 
@@ -60,9 +62,8 @@ module Polyn
     # @param topic [String] the topic to publish to
     # @param payload [Hash] the message to publish
     def publish(topic, payload)
-
-      payload = Utils::Hash.deep_camelize_keys(payload)
-      errors = validator.validate(topic, payload)
+      payload = Utils::Hash.deep_camelize_keys(payload).freeze
+      errors  = validator.validate(topic, payload)
 
       raise Errors::PayloadValidationError, errors unless errors.empty?
 
@@ -83,7 +84,11 @@ module Polyn
 
     private
 
-    attr_reader :service_manager, :container, :log_options, :transit, :validator
+    attr_reader :service_manager, :container, :log_options, :transit, :validator, :hostname, :pid
+
+    def origin
+      "#{name}/#{hostname}/#{pid}"
+    end
 
     def configure_validator(validator)
       @validator = Validators.for(validator)
