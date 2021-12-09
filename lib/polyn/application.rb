@@ -33,7 +33,7 @@ module Polyn
 
     ##
     # @private
-    def self.spawn(options = {})
+    def self.spawn(options)
       super(:supervisor, options)
     end
 
@@ -42,22 +42,25 @@ module Polyn
     end
 
     ##
-    # @param name [String] The name of the application.
-    def initialize(name:, validator:, services: [], transit: {})
+    # @param options [Hash] Polyn options.
+    # @option options [String] :name The name of the application.
+    # @option options [Hash] :validator The validator to use.
+    def initialize(options)
       super()
       logger.info "initializing"
-      @name     = name
+      @name     = options.fetch(:name)
       @hostname = Socket.gethostname
       @pid      = Process.pid
 
-      configure_validator(validator)
+      configure_validator(options.fetch(:validator))
+      transit = options.fetch(:transit, {})
 
       transit.merge!({
         origin: "#{name}@#{hostname}<#{pid}>",
       })
 
-      @service_manager = ServiceManager.spawn(:service_manager, services)
-      @transit         = Transit.spawn(:transit, service_manager, **transit)
+      @service_manager = ServiceManager.spawn(:service_manager, options.fetch(:services, []))
+      @transit         = Transit.spawn(:transit, service_manager, transit)
     end
 
     ##

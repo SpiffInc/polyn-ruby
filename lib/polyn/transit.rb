@@ -64,7 +64,12 @@ module Polyn
     ##
     # @private
     def on_message((msg, *args))
-      send(msg, *args)
+      case msg
+      when :publish
+        publish(*args)
+      else
+        raise NoMethodError, "message handler `#{msg}' for #{self.class.name}"
+      end
     end
 
     private
