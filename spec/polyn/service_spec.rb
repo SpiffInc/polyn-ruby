@@ -17,40 +17,29 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-module Polyn
-  ##
-  # The ServiceManager is responsible for managing the life cycle of services.
-  class ServiceManager < Concurrent::Actor::Context
-    include SemanticLogger::Loggable
+require "spec_helper"
 
-    def initialize(services)
-      super()
-      @services = services
+RSpec.describe Polyn::Service do
+  let(:ev) { Concurrent::Event.new }
+
+  subject do
+    Class.new(Polyn::Service) do
+      name "test-service"
+      event "test", :test
+
+      def test(_context); end
     end
+  end
 
-    ##
-    # @private
-    def on_message((msg, *args))
-      case msg
-      when :receive
-        receive(*args)
-      else
-        raise ArgumentError, "Unknown message: #{message}"
-      end
-    end
+  let(:context) { double(Polyn::Context) }
 
-    private
+  describe ":receive message" do
+    it "should call the appropriate event" do
+      expect_any_instance_of(subject).to receive(:test).with(context) { ev.set }
 
-    attr_reader :services
+      subject.receive("test", context)
 
-    def receive(topic, context)
-      services_with(topic).each do |service|
-        service.receive(topic, context)
-      end
-    end
-
-    def services_with(topic)
-      services.select { |service| service.has?(topic) }
+      ev.wait(1)
     end
   end
 end

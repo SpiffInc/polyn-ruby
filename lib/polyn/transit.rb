@@ -67,6 +67,8 @@ module Polyn
       case msg
       when :publish
         publish(*args)
+      when :receive
+        receive(*args)
       else
         raise NoMethodError, "message handler `#{msg}' for #{self.class.name}"
       end
@@ -85,8 +87,14 @@ module Polyn
     end
 
     def receive(topic, payload)
-      logger.info("received '#{payload}' on '#{topic}'")
-      events[topic].each { |e| e.call(payload) }
+      serializer.deserialize(payload).tap do |message|
+        logger.info("received message from topic '#{topic}'")
+        logger.debug("message: #{message.inspect}")
+
+        context = Context.new(payload: message)
+
+        events[topic].each { |e| e.call(context) }
+      end
     end
 
     def configure_transporter(options)

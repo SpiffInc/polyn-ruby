@@ -66,6 +66,16 @@ module Polyn
       attr_reader :events
 
       ##
+      # Processes incoming events and calls the appropriate event handler.
+      #
+      # @param topic [String] The topic the event was subscribed to.
+      # @param context [Polyn::Context] The context of the event.
+      def receive(topic, context)
+        logger.debug("receiving event '#{topic}'")
+        events[topic].call(context)
+      end
+
+      ##
       # @return [Symbol] the service of the current thread
       def current_service_name
         Thread.local[:polyn_current_service_name] || :root
@@ -119,22 +129,24 @@ module Polyn
       ##
       # @return [Concurrent::ThreadPoolExecutor] the thread pool to use
       def pool
-        @@pool
+        @@pool ||= Concurrent::FixedThreadPool.new(10)
       end
     end
 
-    def on_message((meth, *args))
-      send(meth, *args)
+    def on_message((msg, *args))
+      case msg
+      when :call
+        (method, *args) = args
+        logger.info("calling '#{method}'")
+        public_send(method, *args)
+        logger.trace("terminating")
+        Concurrent::Actor.current.ask!(:terminate!)
+      when :terminated
+        logger.warn("service was terminated.")
+      else
+        raise ArgumentError, "Unknown message '#{msg}'"
+      end
     end
-
-    def call(method, payload)
-      logger.info("calling '#{method}'")
-      send(method, payload)
-      logger.trace("terminating")
-      Concurrent::Actor.current.ask!(:terminate!)
-    end
-
-    def reset; end
 
     ##
     # @private
@@ -143,6 +155,10 @@ module Polyn
     end
 
     private
+
+    def events
+      self.class.events
+    end
 
     def name
       self.class.name

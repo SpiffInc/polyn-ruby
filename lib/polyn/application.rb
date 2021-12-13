@@ -80,7 +80,12 @@ module Polyn
     ##
     # @private
     def on_message((msg, *args))
-      send(msg, *args)
+      case msg
+      when :publish
+        publish(*args)
+      else
+        raise ArgumentError, "unknown message: #{msg.inspect}"
+      end
     end
 
     ##

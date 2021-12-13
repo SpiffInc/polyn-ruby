@@ -29,7 +29,7 @@ require_relative "polyn/transporters"
 require_relative "polyn/utils"
 require_relative "polyn/serializers"
 require_relative "polyn/message"
-
+require_relative "polyn/context"
 
 ##
 # Polyn is a Reactive service framework.
@@ -44,7 +44,6 @@ module Polyn
     configure_logger(config.fetch(:log_options, $stdout))
     @application = Application.spawn(config)
   end
-
 
   ##
   # Publishes a message on the Polyn network.
