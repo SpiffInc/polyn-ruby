@@ -43,11 +43,61 @@ to one or more events.
 | --- | --- | --- | --- | --- |
 | `:name` | `String` | true | | The name of the application |
 
+## Services
+
+Services are built by sublcassing the `Polyn::Service` class. An example email service
+would look like:
+
+```ruby
+class EmailService < Polyn::Service
+  event "user.added", :send_welcome_email
+  event "user.updated", :send_update_email
+  
+  
+  def send_update_email(context)
+    user = User.where(context.params.user_id)
+    UserMailer.with(user: user).update_email.deliver_now
+  end
+  
+  def send_welcome_email(context)
+    user = User.where(context.params.user_id)
+    UserMailer.with(user: user).welcome_email.deliver_now
+  end
+end
+```
+
+Now lets look at what happens when a user is added:
+
+```ruby
+class User < ApplicationRecord
+  after_create :publish_user_created
+  after_update :publish_user_updated
+  
+  
+  private
+  
+  def publish_user_created
+    Polyn.publish("user.created", user.as_json)
+  end
+  
+  def publish_user_updated
+    Polyn.publish("user.updated", user.as_json)
+  end
+end
+```
+
+
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After checking out the repo, run `bin/setup` to install dependencies. Then, run 
+`rake spec` to run the tests. You can also run `bin/console` for an interactive 
+prompt that will allow you to experiment.
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+To install this gem onto your local machine, run `bundle exec rake install`. To 
+release a new version, update the version number in `version.rb`, and then run 
+`bundle exec rake release`, which will create a git tag for the version, push git 
+commits and the created tag, and push the `.gem` file to
+[rubygems.org](https://rubygems.org).
 
 ## Contributing
 
