@@ -56,7 +56,7 @@ RSpec.describe Polyn::Application do
     context "invalid payload" do
       it "raises Polyn::Errors::ValidationError" do
         expect do
-          subject.publish("test-event", { wrong: "payload" })
+          subject.publish("calc.mult", { wrong: "payload" })
         end.to raise_error(Polyn::Errors::PayloadValidationError)
       end
     end
@@ -64,7 +64,7 @@ RSpec.describe Polyn::Application do
     context "snake cased keys" do
       it "camel cases the keys before validation" do
         expect do
-          subject.publish("test-event", { first_name: "value" })
+          subject.publish("calc.mult", { a: 1, b: 2 })
         end.to_not raise_exception
       end
     end
