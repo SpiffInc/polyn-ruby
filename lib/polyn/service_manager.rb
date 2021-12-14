@@ -39,15 +39,17 @@ module Polyn
       end
     end
 
-    private
-
-    attr_reader :services
-
     def receive(topic, context)
       services_with(topic).each do |service|
         service.receive(topic, context)
       end
     end
+
+    private
+
+    attr_reader :services
+
+
 
     def services_with(topic)
       services.select { |service| service.has?(topic) }

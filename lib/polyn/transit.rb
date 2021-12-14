@@ -24,6 +24,10 @@ module Polyn
   class Transit < Concurrent::Actor::RestartingContext
     include SemanticLogger::Loggable
 
+    def self.spawn(*args)
+      super(:transit, *args)
+    end
+
     ##
     # @param options [Hash] the transit options
     # @option options [Symbol|String|Class<Transporters::Base>|Hash] :transporter the transporter
@@ -49,19 +53,6 @@ module Polyn
     end
 
     ##
-    # Publishes an event to the `Transporter`.
-    #
-    # @param topic [String] the topic to publish to
-    # @param payload [Hash] the message payload
-    def publish(topic, payload)
-      logger.info("publishing to topic '#{topic}'")
-      message = message_for(topic, payload)
-
-      serialized = serializer.serialize(message.for_transit)
-      transporter << [:publish, topic, serialized]
-    end
-
-    ##
     # @private
     def on_message((msg, *args))
       case msg
@@ -76,7 +67,7 @@ module Polyn
 
     private
 
-    attr_reader :transporter, :pool, :serializer, :origin
+    attr_reader :transporter, :pool, :serializer, :origin, :service_manager
 
     def message_for(topic, payload)
       Message.new(
@@ -86,14 +77,22 @@ module Polyn
       )
     end
 
+    def publish(topic, payload)
+      logger.info("publishing to topic '#{topic}'")
+      message = message_for(topic, payload)
+
+      serialized = serializer.serialize(message.for_transit)
+      transporter << [:publish, topic, serialized]
+    end
+
     def receive(topic, payload)
       serializer.deserialize(payload).tap do |message|
         logger.info("received message from topic '#{topic}'")
         logger.debug("message: #{message.inspect}")
 
-        context = Context.new(payload: message)
+        context = Context.new(payload: Utils::Hash.deep_symbolize_keys(message))
 
-        events[topic].each { |e| e.call(context) }
+        service_manager.receive(topic, context)
       end
     end
 
