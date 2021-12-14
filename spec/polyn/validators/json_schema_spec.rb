@@ -24,7 +24,7 @@ require_relative "../../../lib/polyn/validators/json_schema"
 RSpec.describe Polyn::Validators::JsonSchema do
   let(:validator) do
     Polyn::Validators::JsonSchema.new(
-      prefix: file.expand_path("../../fixtures", __dir__),
+      prefix: File.expand_path("../../fixtures", __dir__),
       file:   true,
     )
   end
@@ -33,13 +33,13 @@ RSpec.describe Polyn::Validators::JsonSchema do
     context "when the data is valid" do
       let(:data) do
         {
-          "name" => "John Doe",
-          "age"  => 30,
+          "a" => 1,
+        "b"  => 30,
         }
       end
 
       it "returns true" do
-        expect(validator.validate("test-event", data)).to eq([])
+        expect(validator.validate("calc.mult", data)).to eq([])
       end
     end
 
@@ -52,7 +52,7 @@ RSpec.describe Polyn::Validators::JsonSchema do
       end
 
       it "returns false" do
-        expect(validator.validate("test-event", data)).to_not be_empty
+        expect(validator.validate("calc.mult", data)).to_not be_empty
       end
     end
   end
