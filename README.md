@@ -1,4 +1,5 @@
 # Polyn
+[![Ruby](https://github.com/SpiffInc/polyn-ruby/actions/workflows/ruby.yml/badge.svg)](https://github.com/SpiffInc/polyn-ruby/actions/workflows/ruby.yml)
 
 Polyn is a dead simple service framework designed to be language agnostic while
 and providing a simple, yet powerful, abstraction layer for building reactive events
