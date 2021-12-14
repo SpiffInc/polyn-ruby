@@ -27,12 +27,10 @@ RSpec.describe "Internal Transporter with JSON Serializer" do
     Class.new(Polyn::Service) do
       name "calc"
 
-      event "mult", :mult
-      event "div", :div
+      event "calc.mult", :mult
+      event "calc.div", :div
 
-      def mul(ctx)
-        result.set(ctx.params[:a] * ctx.params[:b])
-      end
+      def mult(_ctx); end
     end
   end
 
@@ -52,8 +50,13 @@ RSpec.describe "Internal Transporter with JSON Serializer" do
   describe "publishing and subscribing" do
     it "should publish and subscribe" do
       subject
+      expect_any_instance_of(calc).to receive(:mult) { |_class, ctx|
+                                        result.set(ctx.payload[:a] * ctx.payload[:b])
+                                      }
 
       Polyn.publish("calc.mult", a: 2, b: 3)
+
+      result.wait(1)
     end
   end
 end

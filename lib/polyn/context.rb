@@ -21,10 +21,13 @@ module Polyn
   ##
   # Represents a context in which a Polyn event is evaluated.
   class Context
+    attr_reader :payload
+
     ##
-    # @param payload [Hash] The event payload.
-    def initialize(payload:)
-      @payload = payload
+    # @param message [Hash] The event payload.
+    def initialize(message:)
+      @message = message
+      @payload = message[:payload]
     end
   end
 end

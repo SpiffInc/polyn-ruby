@@ -40,7 +40,7 @@ module Polyn
       end
 
       def publish(topic, message)
-        logger.info("publishing to topic '#{topic}'")
+        logger.debug("publishing to topic '#{topic}'")
         transit << [:receive, topic, message] if subscriptions.include?(topic)
       end
 

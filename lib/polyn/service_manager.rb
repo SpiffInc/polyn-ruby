@@ -42,8 +42,10 @@ module Polyn
       case msg
       when :receive
         receive(*args)
+      when :services
+        services
       else
-        raise ArgumentError, "Unknown message: #{message}"
+        pass
       end
     end
 

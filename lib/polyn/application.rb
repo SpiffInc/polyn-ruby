@@ -59,8 +59,8 @@ module Polyn
         origin: "#{name}@#{hostname}<#{pid}>",
       })
 
-      @service_manager = ServiceManager.spawn(:service_manager, options.fetch(:services, []))
-      @transit         = Transit.spawn(:transit, service_manager, transit)
+      @service_manager = ServiceManager.spawn(options.fetch(:services, []))
+      @transit         = Transit.spawn(service_manager, transit)
     end
 
     ##

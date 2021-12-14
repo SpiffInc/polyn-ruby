@@ -19,7 +19,7 @@ module Polyn
       transporter_config = config.is_a?(Hash) ? config : {}
       case config
       when Transporters::Base
-        config
+        transporter_config
       when :internal || "internal"
         Transporters::Internal
       else

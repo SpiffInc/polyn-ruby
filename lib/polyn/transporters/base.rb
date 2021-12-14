@@ -31,7 +31,14 @@ module Polyn
       end
 
       def on_message((msg, *args))
-        send(msg, *args)
+        case msg
+        when :publish
+          publish(*args)
+        when :subscribe
+          subscribe(*args)
+        else
+          pass
+        end
       end
 
       def connect

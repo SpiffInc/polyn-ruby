@@ -43,13 +43,10 @@ module Polyn
 
       logger.debug("serializer set to '#{serializer.class.name}'")
 
-      @pool = Concurrent::ThreadPoolExecutor.new({
-        min_threads: 5,
-        max_threads: 10,
-        max_queue:   20,
-      })
-
+      # Set the service pool to use the Transit thread pool.
       Service.pool = pool
+
+      subscribe_to_events
     end
 
     ##
@@ -61,13 +58,32 @@ module Polyn
       when :receive
         receive(*args)
       else
-        raise NoMethodError, "message handler `#{msg}' for #{self.class.name}"
+        pass
       end
     end
 
     private
 
-    attr_reader :transporter, :pool, :serializer, :origin, :service_manager
+    attr_reader :transporter, :serializer, :origin, :service_manager
+
+    # iterates through all the services and subscribes to the events
+    def subscribe_to_events
+      logger.info("subscribing to events")
+      service_manager.ask!(:services).each do |service|
+        service.events.each do |(_topic, event)|
+          logger.debug("service '#{service.name}' is subscribed to event '#{event.topic}'")
+          transporter << [:subscribe, event.topic]
+        end
+      end
+    end
+
+    def pool
+      @pool ||= Concurrent::ThreadPoolExecutor.new({
+        min_threads: 5,
+        max_threads: 10,
+        max_queue:   20,
+      })
+    end
 
     def message_for(topic, payload)
       Message.new(
@@ -90,9 +106,9 @@ module Polyn
         logger.info("received message from topic '#{topic}'")
         logger.debug("message: #{message.inspect}")
 
-        context = Context.new(payload: Utils::Hash.deep_symbolize_keys(message))
+        context = Context.new(message: Utils::Hash.deep_symbolize_keys(message))
 
-        service_manager.receive(topic, context)
+        service_manager << [:receive, topic, context]
       end
     end
 
