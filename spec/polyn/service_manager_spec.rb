@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Copyright 2021-2022 Jarod Reid
+# Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
 # software and associated documentation files (the "Software"), to deal in the Software
@@ -17,44 +17,22 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-module Polyn
-  ##
-  # The ServiceManager is responsible for managing the life cycle of services.
-  class ServiceManager < Concurrent::Actor::Context
-    include SemanticLogger::Loggable
+RSpec.describe Polyn::ServiceManager do
+  describe ":receive message" do
+    let(:context) { instance_double(Polyn::Context) }
+    let(:service_1) { class_double(Polyn::Service) }
+    let(:service_2) { class_double(Polyn::Service) }
+    let(:ev) { Concurrent::Event.new }
 
-    ##
-    # @private
-    def self.spawn(services)
-      super(:service_manager, services)
-    end
+    subject { Polyn::ServiceManager.spawn([service_1, service_2]) }
 
-    ##
-    # @param services [Array<Polyn::Service>] the services for this node.
-    def initialize(services)
-      super()
-      @services = services
-    end
+    it "should call #receive on the service" do
+      expect(service_1).to receive(:receive).with("test", context)
+      expect(service_2).to receive(:receive).with("test", context) { ev.set }
 
-    ##
-    # @private
-    def on_message((msg, *args))
-      case msg
-      when :receive
-        receive(*args)
-      else
-        raise ArgumentError, "Unknown message: #{message}"
-      end
-    end
+      subject << [:receive, "test", context]
 
-    private
-
-    attr_reader :services
-
-    def receive(topic, context)
-      services.each do |service|
-        service.receive(topic, context)
-      end
+      ev.wait(1)
     end
   end
 end
