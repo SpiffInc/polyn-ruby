@@ -39,7 +39,7 @@ module Polyn
     class Pubsub < Base
       ##
       # @private
-      class Message < Polyn::Transporters::Message
+      class Message < Transporters::Message
         def initialize(topic, msg)
           super(topic, msg.data)
           @msg = msg
@@ -129,10 +129,6 @@ module Polyn
           tx_message = Message.new(subscription.name, message)
 
           transit << [:receive, tx_message]
-        end
-
-        subscriber.on_error do |exception|
-          logger.error(exception)
         end
 
         subscribers << subscriber

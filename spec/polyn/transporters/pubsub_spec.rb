@@ -28,33 +28,33 @@ RSpec.describe Polyn::Transporters::Pubsub do
     }
   end
 
-  let(:ev) {Concurrent::Event.new}
+  let(:ev) { Concurrent::Event.new }
 
   let(:pubsub_client) { Google::Cloud::Pubsub.new(**options) }
 
   subject { described_class.spawn(transit, options) }
 
-  before :each do
-    subject.connect!
+  describe "#publish and #subscribe" do
+    before :each do
+      subject.connect!
 
-    topic   = pubsub_client.topic("test-topic")
-    topic ||= pubsub_client.create_topic("test-topic")
+      topic   = pubsub_client.topic("test-topic")
+      topic ||= pubsub_client.create_topic("test-topic")
 
-    subscription   = pubsub_client.subscription("test-topic")
-    topic.subscribe("test-topic") unless subscription
-  end
+      subscription   = pubsub_client.subscription("test-topic")
+      topic.subscribe("test-topic") unless subscription
+    end
 
-  after :each do
-    subject.disconnect!
+    after :each do
+      subject.disconnect!
 
-    pubsub_client.subscription("test-topic").delete
-    pubsub_client.topic("test-topic").delete
-  end
+      pubsub_client.subscription("test-topic")&.delete
+      pubsub_client.topic("test-topic")&.delete
+    end
 
-  describe("publish and subscribe") do
     it "should publish the provided message to the subscribed topic" do
       expect(transit).to receive(:<<)
-                           .with([:receive, instance_of(described_class::Message)]) do |_, message|
+        .with([:receive, instance_of(described_class::Message)]) do |_, message|
         message.acknowledge
         ev.set
       end
@@ -63,6 +63,74 @@ RSpec.describe Polyn::Transporters::Pubsub do
       subject.publish!("test-topic", "test-message")
 
       ev.wait(1)
+    end
+  end
+
+  describe "#connect" do
+    it "should raise Polyn::Transporters::Errors::TimeoutError when a time out occurs during connect" do
+      expect_any_instance_of(Google::Cloud::PubSub::Project).to receive(:topics)
+        .and_raise(Google::Cloud::DeadlineExceededError)
+
+      expect { subject.connect! }.to raise_exception(Polyn::Transporters::Errors::TimeoutError)
+    end
+  end
+
+  describe "#publish" do
+    before :each do
+      subject.connect!
+
+      topic   = pubsub_client.topic("test-topic")
+      pubsub_client.create_topic("test-topic") unless topic
+    end
+
+    after :each do
+      subject.disconnect!
+
+      pubsub_client.topic("test-topic")&.delete
+    end
+
+    it "should raise Polyn::Transporters::Errors::TimeoutError when a time out occurs during publish" do
+      expect_any_instance_of(Google::Cloud::PubSub::Topic).to receive(:publish)
+        .and_raise(Google::Cloud::DeadlineExceededError)
+
+      expect do
+        subject.publish!("test-topic",
+          "test-message")
+      end.to raise_exception(Polyn::Transporters::Errors::TimeoutError)
+    end
+  end
+
+  describe "#subscribe" do
+    before :each do
+      subject.connect!
+
+      topic   = pubsub_client.topic("test-topic")
+      topic ||= pubsub_client.create_topic("test-topic")
+
+      subscription   = pubsub_client.subscription("test-topic")
+      topic.subscribe("test-topic") unless subscription
+    end
+
+    after :each do
+      subject.disconnect!
+
+      pubsub_client.subscription("test-topic")&.delete
+      pubsub_client.topic("test-topic")&.delete
+    end
+
+    it "should raise Polyn::Transporters::Errors::TimeoutError when a time out occurs during subscribe" do
+      expect_any_instance_of(Google::Cloud::PubSub::Subscription).to receive(:listen)
+        .and_raise(Google::Cloud::DeadlineExceededError)
+
+      expect do
+        subject.subscribe!("test-topic")
+      end.to raise_exception(Polyn::Transporters::Errors::TimeoutError)
+    end
+
+    it "raises a Polyn::Transporters::Errors::TopicNotFoundError when the topic does not exist" do
+      expect do
+        subject.subscribe!("test-non-topic")
+      end.to raise_exception(Polyn::Transporters::Errors::TopicNotFoundError)
     end
   end
 end
