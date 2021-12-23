@@ -126,7 +126,7 @@ module Polyn
         logger.debug("setting listener")
         subscriber = subscription.listen do |message|
           logger.debug("received message on '#{subscription.name}'")
-          tx_message = Message.new(subscription.name, message)
+          tx_message = Message.new(subscription.topic.name.split("/").last, message)
 
           transit << [:receive, tx_message]
         end

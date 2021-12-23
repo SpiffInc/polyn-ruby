@@ -53,9 +53,9 @@ module Polyn
 
     attr_reader :services
 
-    def receive(topic, context)
+    def receive(context)
       services.each do |service|
-        service.receive(topic, context)
+        service.receive(context.topic, context)
       end
     end
   end

@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "spec_helper"
+require "google/cloud/pubsub"
+
 require_relative "../../../lib/polyn/validators/json_schema"
 
 RSpec.describe "Pubsub Transporter with JSON Serializer" do
@@ -34,6 +36,15 @@ RSpec.describe "Pubsub Transporter with JSON Serializer" do
     end
   end
 
+  let(:options) do
+    {
+      project_id:    "test-project",
+      emulator_host: "localhost:8085",
+    }
+  end
+
+  let(:pubsub_client) { Google::Cloud::Pubsub.new(**options) }
+
   subject do
     Polyn.start(
       name:       "test",
@@ -44,15 +55,34 @@ RSpec.describe "Pubsub Transporter with JSON Serializer" do
       transit:    {
         transporter: {
           type:    :pubsub,
-          options: {
-            project_id:    "test-project",
-            emulator_host: "localhost:8085",
-          },
+          options: options,
         },
       },
       serializer: :json,
       services:   [calc],
     )
+  end
+
+  before :each do
+    topic   = pubsub_client.topic("calc.mult")
+    topic ||= pubsub_client.create_topic("calc.mult")
+
+    subscription   = pubsub_client.subscription("test-topic")
+    topic.subscribe("calc-calc.mult") unless subscription
+
+    topic   = pubsub_client.topic("calc.div")
+    topic ||= pubsub_client.create_topic("calc.div")
+
+    topic.subscribe("calc-calc.div") unless subscription
+
+  end
+
+  after :each do
+    pubsub_client.subscription("calc-calc.mult")&.delete
+    pubsub_client.topic("calc.mult")&.delete
+
+    pubsub_client.subscription("calc-calc.div")&.delete
+    pubsub_client.topic("calc.div")&.delete
   end
 
   describe "publishing and subscribing" do

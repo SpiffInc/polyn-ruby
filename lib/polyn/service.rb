@@ -71,8 +71,10 @@ module Polyn
       # @param topic [String] The topic the event was subscribed to.
       # @param context [Polyn::Context] The context of the event.
       def receive(topic, context)
-        logger.debug("receiving event '#{topic}'")
-        events[topic].call(context)
+        if events[topic]
+          logger.debug("receiving event '#{topic}'")
+          events[topic].call(context)
+        end
       end
 
       ##

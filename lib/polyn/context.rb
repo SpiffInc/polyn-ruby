@@ -21,15 +21,16 @@ module Polyn
   ##
   # Represents a context in which a Polyn event is evaluated.
   class Context
-    attr_reader :payload, :raw
+    attr_reader :payload, :raw, :topic
 
     ##
-    # @param message [Hash] The event payload.
-    # @param raw [Polyn::Transporters::Message] the raw message received from the transporter.
+    # @param raw [Hash] the raw message received from the transporter
+    # @param message [Polyn::Transporters::Message] message received from transporter
     def initialize(message:, raw:)
       @message = message
-      @payload = message[:payload]
+      @payload = raw[:payload]
       @raw     = raw
+      @topic   = message.topic
     end
 
     ##

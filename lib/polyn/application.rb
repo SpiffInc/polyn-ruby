@@ -63,8 +63,6 @@ module Polyn
       @service_manager = ServiceManager.spawn(options.fetch(:services, []))
       logger.debug("starting transit")
       @transit         = Transit.spawn(service_manager, transit)
-      logger.debug("waiting for transit to be ready")
-      sleep 0.1 until @transit.ask!([:ready?])
     end
 
     ##
