@@ -28,7 +28,7 @@ RSpec.describe Polyn::Transit do
   let(:ev) { Concurrent::Event.new }
   let(:message) { instance_double(Polyn::Message, for_transit: message_for_transit) }
   let(:service_manager) { instance_double(Polyn::ServiceManager) }
-  let(:transporter) { double("InternalTransporter") }
+  let(:transporter) { instance_double(Polyn::Transporters::Base::Wrapper, connect!: true) }
   let(:serializer) { instance_double(Polyn::Serializers::Json) }
   let(:message_for_transit) { double("MessageForTransit") }
   let(:serialized_message) { double("SerializedMessage") }
@@ -47,7 +47,7 @@ RSpec.describe Polyn::Transit do
 
     it "should publish the serialized data" do
       expect(serializer).to receive(:serialize).with(message.for_transit).and_return(serialized_message)
-      expect(transporter).to receive(:<<).with([:publish, "foo", serialized_message]) { ev.set }
+      expect(transporter).to receive(:publish!).with("foo", serialized_message) { ev.set }
 
       subject << [:publish, "foo", message]
 
@@ -61,13 +61,14 @@ RSpec.describe Polyn::Transit do
     let(:context) { instance_double(Polyn::Context) }
     let(:payload) { { bar: "baz" } }
     let(:json) { payload.to_json }
+    let(:message) { Polyn::Transporters::Message.new("test", json) }
 
     it "should send the deserializes the message and sends the context to the service_manager" do
       expect(serializer).to receive(:deserialize).with(json).and_return(payload)
-      expect(Polyn::Context).to receive(:new).with(**{ message: payload }).and_return(context)
-      expect(service_manager).to receive(:<<).with([:receive, "test", context]) { ev.set }
+      expect(Polyn::Context).to receive(:new).with(**{ message: message, raw: payload }).and_return(context)
+      expect(service_manager).to receive(:<<).with([:receive, context]) { ev.set }
 
-      subject << [:receive, "test", json]
+      subject << [:receive, message]
 
       ev.wait(1)
     end

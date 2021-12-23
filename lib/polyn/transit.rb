@@ -46,8 +46,7 @@ module Polyn
       # Set the service pool to use the Transit thread pool.
       Service.pool = pool
 
-      subscribe_to_events
-      @ready = true
+      subscribe_to_events!
     end
 
     ##
@@ -58,8 +57,6 @@ module Polyn
         publish(*args)
       when :receive
         receive(*args)
-      when :ready?
-        @ready
       else
         pass
       end
@@ -74,15 +71,12 @@ module Polyn
     end
 
     # iterates through all the services and subscribes to the events
-    def subscribe_to_events
+    def subscribe_to_events!
       logger.info("subscribing to events")
       events.each do |event|
         logger.debug("service '#{event.service.name}' is subscribing ito event '#{event.topic}'")
-        transporter << [:subscribe, event.topic]
+        transporter.subscribe!(event.service.name, event.topic)
       end
-      logger.info("waiting for subscriptions to be ready")
-      sleep 0.1
-      logger.info("subscriptions ready")
     end
 
     def pool
@@ -106,15 +100,15 @@ module Polyn
       message = message_for(topic, payload)
 
       serialized = serializer.serialize(message.for_transit)
-      transporter << [:publish, topic, serialized]
+      transporter.publish!(topic, serialized)
     end
 
     def receive(message)
       serializer.deserialize(message.data).tap do |deserialized|
         logger.info("received message from topic '#{message.topic}'")
-        context = Context.new(message: Utils::Hash.deep_symbolize_keys(deserialized), raw: message)
+        context = Context.new(message: message, raw: deserialized)
 
-        service_manager << [:receive, message.topic, context]
+        service_manager << [:receive, context]
       end
     end
 
@@ -126,7 +120,7 @@ module Polyn
         transporter_config_from(options),
       )
 
-      transporter.ask!(:connect)
+      transporter.connect!
     end
 
     def transporter_config_from(options)
