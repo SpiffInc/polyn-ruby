@@ -42,13 +42,13 @@ RSpec.describe Polyn::Transporters::Pubsub do
       topic ||= pubsub_client.create_topic("test-topic")
 
       subscription   = pubsub_client.subscription("test-topic")
-      topic.subscribe("test-topic") unless subscription
+      topic.subscribe("test-test-topic") unless subscription
     end
 
     after :each do
       subject.disconnect!
 
-      pubsub_client.subscription("test-topic")&.delete
+      pubsub_client.subscription("test-test-topic")&.delete
       pubsub_client.topic("test-topic")&.delete
     end
 
@@ -59,7 +59,7 @@ RSpec.describe Polyn::Transporters::Pubsub do
         ev.set
       end
 
-      subject.subscribe!("test-topic")
+      subject.subscribe!("test", "test-topic")
       subject.publish!("test-topic", "test-message")
 
       ev.wait(1)
@@ -108,13 +108,13 @@ RSpec.describe Polyn::Transporters::Pubsub do
       topic ||= pubsub_client.create_topic("test-topic")
 
       subscription   = pubsub_client.subscription("test-topic")
-      topic.subscribe("test-topic") unless subscription
+      topic.subscribe("test-test-topic") unless subscription
     end
 
     after :each do
       subject.disconnect!
 
-      pubsub_client.subscription("test-topic")&.delete
+      pubsub_client.subscription("test-test-topic")&.delete
       pubsub_client.topic("test-topic")&.delete
     end
 
@@ -123,13 +123,13 @@ RSpec.describe Polyn::Transporters::Pubsub do
         .and_raise(Google::Cloud::DeadlineExceededError)
 
       expect do
-        subject.subscribe!("test-topic")
+        subject.subscribe!("test", "test-topic")
       end.to raise_exception(Polyn::Transporters::Errors::TimeoutError)
     end
 
     it "raises a Polyn::Transporters::Errors::TopicNotFoundError when the topic does not exist" do
       expect do
-        subject.subscribe!("test-non-topic")
+        subject.subscribe!("test", "test-non-topic")
       end.to raise_exception(Polyn::Transporters::Errors::TopicNotFoundError)
     end
   end

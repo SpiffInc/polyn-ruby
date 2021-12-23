@@ -86,9 +86,9 @@ module Polyn
           "the transporter timed out attempting to topic '#{topic}'")
       end
 
-      def subscribe(topic)
+      def subscribe(service_name, topic)
         logger.debug("subscribing to topic '#{topic}'")
-        subscription = subscription_for_topic(topic)
+        subscription = subscription_for_topic("#{service_name}-#{topic}")
 
         create_subscriber_for_subscription(subscription)
       rescue Google::Cloud::DeadlineExceededError => e
