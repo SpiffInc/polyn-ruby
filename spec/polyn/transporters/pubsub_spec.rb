@@ -61,7 +61,7 @@ RSpec.describe Polyn::Transporters::Pubsub do
       subject.subscribe!("test-topic")
       subject.publish!("test-topic", "test-message")
 
-      ev.wait(5)
+      ev.wait(1)
     end
   end
 end

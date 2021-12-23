@@ -22,7 +22,13 @@ require "google/cloud/pubsub"
 module Polyn
   module Transporters
     ##
-    # Pubsub provides a transporter for Google Cloud Pub/Sub.
+    # Pubsub provides a transporter for Google Cloud Pub/Sub. The Google Pubsub transporter makes no
+    # attempt to set up the topic or subscription. It is up to the developer to ensure that the
+    # topic and subscription exist. Various options are available to configure google pubsub,
+    # such as
+    # [Terraform](https://registry.terraform.io/modules/terraform-google-modules/pubsub/google/latest).
+    #
+    # If the topic or subscription are not created, the transporter will throw an exception.
     #
     # @param transit [Polyn::Transit] the transit actor
     # @param options [Hash] the options for the transporter
@@ -49,7 +55,7 @@ module Polyn
 
       def initialize(*arg)
         super
-        @subscriptions = []
+        @subscribers = []
       end
 
       def connect
@@ -60,8 +66,8 @@ module Polyn
 
       def disconnect
         logger.info("disconnecting")
-        logger.info("stopping '#{subscriptions.length}' subscribers")
-        subscriptions.each(&:stop)
+        logger.info("stopping '#{subscribers.length}' subscribers")
+        subscribers.each(&:stop)
         logger.info("disconnected")
       end
 
@@ -79,27 +85,9 @@ module Polyn
       def subscribe(topic)
         logger.debug("subscribing to topic '#{topic}'")
         Timeout.timeout(5) do
-          subscription = client.subscription(topic)
+          subscription = subscription_for_topic(topic)
 
-          raise Polyn::Errors::TransporterTopicNotFoundError, "topic '#{topic}' not found" unless subscription
-
-          logger.debug("setting listener")
-          subscriber = subscription.listen do |message|
-            logger.debug("received message on '#{topic}'")
-            tx_message = Message.new(topic, message)
-
-            transit << [:receive, tx_message]
-          end
-
-          subscriber.on_error do |exception|
-            logger.error(exception)
-          end
-
-          subscriptions << subscriber
-
-          subscriber.start
-
-          logger.debug("listener set '#{subscriber}'")
+          create_subscriber_for_subscription(subscription)
         end
       rescue Timeout::Error
         logger.error("timeout while subscribing to topic '#{topic}'")
@@ -109,8 +97,39 @@ module Polyn
 
       private
 
-      attr_reader :client, :subscriptions
-    end
+      attr_reader :client, :subscribers
 
+      def subscription_for_topic(topic)
+        logger.debug("looking up pubsub subscription for topic '#{topic}'")
+        subscription = client.subscription(topic)
+
+        unless subscription
+          raise Polyn::Errors::TransporterTopicNotFoundError,
+            "topic '#{topic}' not found"
+        end
+
+        subscription
+      end
+
+      def create_subscriber_for_subscription(subscription)
+        logger.debug("setting listener")
+        subscriber = subscription.listen do |message|
+          logger.debug("received message on '#{subscription.name}'")
+          tx_message = Message.new(subscription.name, message)
+
+          transit << [:receive, tx_message]
+        end
+
+        subscriber.on_error do |exception|
+          logger.error(exception)
+        end
+
+        subscribers << subscriber
+
+        subscriber.start
+
+        logger.debug("listener set '#{subscriber}'")
+      end
+    end
   end
 end
