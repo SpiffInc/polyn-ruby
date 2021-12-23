@@ -88,19 +88,33 @@ module Polyn
         end
       end
 
+      ##
+      # Connect to the transporter.
       def connect
         raise NotImplementedError
       end
 
+      ##
+      # Disconnect from the transporter.
       def disconnect
         raise NotImplementedError
       end
 
+      ##
+      # Publish a message to the transporter.
+      #
+      # @param topic [String] The topic to publish to
+      # @param message [String] The message to publish
       def publish(topic, message)
         raise NotImplementedError
       end
 
-      def subscribe(topic, &block)
+      ##
+      # Subscribe to a topic on the transporter.
+      #
+      # @param service [String] The service name for which the subscription is being made
+      # @param topic [String] The topic to subscribe to
+      def subscribe(service, topic)
         raise NotImplementedError
       end
 
