@@ -17,10 +17,27 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require_relative "service"
+module Polyn
+  module Transporters
+    ##
+    # Represents the raw, unserialized message from the transporter. Each transporter should subclass this
+    # class and create its own message class.
+    class Message
+      attr_accessor :data, :topic
 
-require_relative "errors/error"
-require_relative "errors/service_name_error"
-require_relative "errors/payload_validation_error"
-require_relative "errors/transporter_timeout_error"
-require_relative "errors/transporter_topic_not_found_error"
+      ##
+      # @param topic [String] the topic the message is was received on
+      # @param data [String] the raw data received from the transporter
+      def initialize(topic, data)
+        @topic = topic
+        @data  = data
+      end
+
+      ##
+      # Subclasses should implement this method to acknowledge that the message has been received.
+      def acknowledge
+        raise NotImplementedError
+      end
+    end
+  end
+end

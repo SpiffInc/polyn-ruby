@@ -24,6 +24,12 @@ module Polyn
     ##
     # Internal transporter for use in testing.
     class Internal < Base
+      ##
+      # @private
+      class Message < Polyn::Transporters::Message
+        def acknowledge; end
+      end
+
       def initialize(transit, options = {})
         super(transit, options)
         @subscriptions = []
@@ -41,7 +47,9 @@ module Polyn
 
       def publish(topic, message)
         logger.debug("publishing to topic '#{topic}'")
-        transit << [:receive, topic, message] if subscriptions.include?(topic)
+        tx_message = Message.new(topic, message)
+
+        transit << [:receive, tx_message] if subscriptions.include?(topic)
       end
 
       def subscribe(topic)

@@ -17,6 +17,8 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+require_relative "./message"
+
 module Polyn
   module Transporters
     ##
@@ -25,9 +27,50 @@ module Polyn
     class Base < Concurrent::Actor::RestartingContext
       include SemanticLogger::Loggable
 
-      def initialize(transit, _options = {})
+      ##
+      # @private
+      class Wrapper
+        def initialize(actor)
+          @actor = actor
+        end
+
+        def publish(*args)
+          actor << [:publish, *args]
+        end
+
+        def subscribe(*args)
+          actor << [:subscribe, *args]
+        end
+
+        def subscribe!(*args)
+          actor.ask!([:subscribe, *args])
+        end
+
+        def publish!(*args)
+          actor.ask!([:publish, *args])
+        end
+
+        def connect!
+          actor.ask!(:connect)
+        end
+
+        def disconnect!
+          actor.ask!(:disconnect)
+        end
+
+        private
+
+        attr_reader :actor
+      end
+
+      def self.spawn(transit, options)
+        Wrapper.new(super(name, transit, options))
+      end
+
+      def initialize(transit, options = {})
         super()
         @transit = transit
+        @options = options
       end
 
       def on_message((msg, *args))
@@ -36,6 +79,10 @@ module Polyn
           publish(*args)
         when :subscribe
           subscribe(*args)
+        when :connect
+          connect
+        when :disconnect
+          disconnect
         else
           pass
         end
@@ -63,7 +110,11 @@ module Polyn
 
       private
 
-      attr_reader :transit
+      attr_reader :transit, :options
+
+      def subscription_count
+        raise NotImplementedError
+      end
     end
   end
 end

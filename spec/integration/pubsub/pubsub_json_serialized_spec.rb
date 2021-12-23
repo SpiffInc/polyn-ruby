@@ -17,25 +17,54 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-module Polyn
-  ##
-  # Represents a context in which a Polyn event is evaluated.
-  class Context
-    attr_reader :payload, :raw
+require "spec_helper"
+require_relative "../../../lib/polyn/validators/json_schema"
 
-    ##
-    # @param message [Hash] The event payload.
-    # @param raw [Polyn::Transporters::Message] the raw message received from the transporter.
-    def initialize(message:, raw:)
-      @message = message
-      @payload = message[:payload]
-      @raw     = raw
+RSpec.describe "Pubsub Transporter with JSON Serializer" do
+  let(:result) { Concurrent::IVar.new }
+
+  let(:calc) do
+    Class.new(Polyn::Service) do
+      name "calc"
+
+      event "calc.mult", :mult
+      event "calc.div", :div
+
+      def mult(_ctx); end
     end
+  end
 
-    ##
-    # Acknowledges that the event has been processed successfully.
-    def acknowledge
-      raw.acknowledge
+  subject do
+    Polyn.start(
+      name:       "test",
+      validator:  Polyn::Validators::JsonSchema.new(
+        prefix: File.expand_path("../../fixtures", __dir__),
+        file:   true,
+      ),
+      transit:    {
+        transporter: {
+          type:    :pubsub,
+          options: {
+            project_id:    "test-project",
+            emulator_host: "localhost:8085",
+          },
+        },
+      },
+      serializer: :json,
+      services:   [calc],
+    )
+  end
+
+  describe "publishing and subscribing" do
+    it "should publish and subscribe" do
+      subject
+      expect_any_instance_of(calc).to receive(:mult) { |_class, ctx|
+        result.set(ctx.payload[:a] * ctx.payload[:b])
+      }
+
+      Polyn.publish("calc.mult", a: 2, b: 3)
+
+      result.wait(1)
     end
   end
 end
