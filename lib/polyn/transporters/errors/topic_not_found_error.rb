@@ -17,10 +17,14 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require_relative "service"
-
-require_relative "errors/error"
-require_relative "errors/service_name_error"
-require_relative "errors/payload_validation_error"
-
-require_relative "transporters/errors"
+module Polyn
+  module Transporters
+    module Errors
+      ##
+      # This error is raised when a topic is not found. Typically this occurs on transporters where
+      # the topic must be manually created, such as the Google Pub/Sub transporter.
+      class TopicNotFoundError < Error
+      end
+    end
+  end
+end

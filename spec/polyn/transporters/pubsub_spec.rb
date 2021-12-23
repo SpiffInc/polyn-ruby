@@ -53,7 +53,8 @@ RSpec.describe Polyn::Transporters::Pubsub do
 
   describe("publish and subscribe") do
     it "should publish the provided message to the subscribed topic" do
-      expect(transit).to receive(:<<).with([:receive, instance_of(described_class::Message)]) do |_, message|
+      expect(transit).to receive(:<<)
+                           .with([:receive, instance_of(described_class::Message)]) do |_, message|
         message.acknowledge
         ev.set
       end

@@ -17,10 +17,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require_relative "service"
-
 require_relative "errors/error"
-require_relative "errors/service_name_error"
-require_relative "errors/payload_validation_error"
-
-require_relative "transporters/errors"
+require_relative "errors/timeout_error"
+require_relative "errors/topic_not_found_error"

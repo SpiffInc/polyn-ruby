@@ -17,10 +17,17 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require_relative "service"
-
-require_relative "errors/error"
-require_relative "errors/service_name_error"
-require_relative "errors/payload_validation_error"
-
-require_relative "transporters/errors"
+module Polyn
+  module Transporters
+    module Errors
+      ##
+      # Called when a transporter times out attempting an operation.
+      class TimeoutError < Error
+        def initialize(original_error, message = nil)
+          super(message)
+          @original_error = original_error
+        end
+      end
+    end
+  end
+end
