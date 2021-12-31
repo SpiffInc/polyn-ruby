@@ -108,9 +108,9 @@ module Polyn
         logger.info("received message from topic '#{message.topic}'")
         context = Context.new(
           message: message,
-          raw: Utils::Hash.deep_symbolize_keys(
-            Utils::Hash.deep_snake_case_keys(deserialized)
-          )
+          raw:     Utils::Hash.deep_symbolize_keys(
+            Utils::Hash.deep_snake_case_keys(deserialized),
+          ),
         )
 
         service_manager << [:receive, context]

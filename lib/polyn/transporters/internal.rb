@@ -52,7 +52,7 @@ module Polyn
         transit << [:receive, tx_message] if subscriptions.include?(topic)
       end
 
-      def subscribe(topic)
+      def subscribe(_service_name, topic)
         subscriptions << topic
       end
 
