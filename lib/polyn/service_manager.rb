@@ -55,7 +55,7 @@ module Polyn
 
     def receive(context)
       services.each do |service|
-        service.receive(context.topic, context)
+        service.receive(context)
       end
     end
   end
