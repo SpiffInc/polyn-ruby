@@ -31,5 +31,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: Start containers
+      run: docker-compose -f "docker-compose.yml" up -d --build
     - name: Run tests
       run: bundle exec rspec spec
