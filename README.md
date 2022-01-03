@@ -45,7 +45,7 @@ to one or more events.
 | `:name` | `String` | true |                                   | The name of the application             |
 | `:services` | `Array` | true |                                   | An array of `Polyn::Service` subclasses |
 | `:validator` | `Polyn::Validators::Base` | true | | The event schema validator to use       |
-| `:transit` | `Hash` | true |                                   || The transit options to use |
+| `:transit` | `Hash` | true |                                   | The transit configuration |
 
 ## Services
 
