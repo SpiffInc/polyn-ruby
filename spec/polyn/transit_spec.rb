@@ -56,8 +56,6 @@ RSpec.describe Polyn::Transit do
   end
 
   describe ":receive message" do
-
-
     let(:context) { instance_double(Polyn::Context) }
     let(:payload) { { bar: "baz" } }
     let(:json) { payload.to_json }
