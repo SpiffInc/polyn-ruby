@@ -40,9 +40,12 @@ to one or more events.
 
 ## Configuration
 
-| Key | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `:name` | `String` | true | | The name of the application |
+| Key | Type | Required | Default                           | Description                             |
+| --- | --- | --- |-----------------------------------|-----------------------------------------|
+| `:name` | `String` | true |                                   | The name of the application             |
+| `:services` | `Array` | true |                                   | An array of `Polyn::Service` subclasses |
+| `:validator` | `Polyn::Validators::Base` | true | |  The event schem validator to use       |
+| :transit | `Hash` | true |                                   || The transit options to use |
 
 ## Services
 
@@ -87,6 +90,27 @@ class User < ApplicationRecord
 end
 ```
 
+### Events
+Services are made up of one or more events. An event is defined by a name and a method to call when that event is triggered.
+When an event is published, it is validated against the configured validator. If the event is valid, the the event message
+is serialized and published to the configured transporter.
+
+When an event is received, it is validated against the configured validator, and if valid the method tied to the event within
+the service is called.
+
+### Validators
+A validator is a class that implements the `Polyn::Validators::Base` interface. The default validator is 
+`Polyn::Validators::JsonSchema`. Validators ensure that the event message is valid according to the configured schema.
+
+#### `Polyn::Validators::JsonSchema`
+The JsonSchema validator is the default validator. It uses the [json-schema](https://json-schema.org/) to validate against,
+and may validate using either a local file or a remote schema url. The `Polyn::Validators::JsonSchema`. The validator expects
+each event schema to be defined in its own file, where the name of the file is `<event_name>.json`.
+
+##### Configuration
+| Key | Type | Required | Default                           | Description                             |
+| -- | --- | --- |-----------------------------------|-----------------------------------------|
+| `:prefix` | `String` | true | | The prefix of the schem a location, this may be a file, or a qualified url  |
 
 ## Development
 
