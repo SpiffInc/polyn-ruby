@@ -31,13 +31,13 @@ RSpec.describe Polyn::Service do
     end
   end
 
-  let(:context) { double(Polyn::Context) }
+  let(:context) { double(Polyn::Context, topic: "test") }
 
   describe ":receive message" do
     it "should call the appropriate event" do
       expect_any_instance_of(subject).to receive(:test).with(context) { ev.set }
 
-      subject.receive("test", context)
+      subject.receive(context)
 
       ev.wait(1)
     end
