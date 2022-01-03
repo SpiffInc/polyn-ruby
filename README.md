@@ -61,11 +61,15 @@ class EmailService < Polyn::Service
   def send_update_email(context)
     user = User.where(context.params.user_id)
     UserMailer.with(user: user).update_email.deliver_now
+    
+    context.acknowledge
   end
   
   def send_welcome_email(context)
     user = User.where(context.params.user_id)
     UserMailer.with(user: user).welcome_email.deliver_now
+    
+    context.acknowledge
   end
 end
 ```
@@ -97,6 +101,12 @@ is serialized and published to the configured transporter.
 
 When an event is received, it is validated against the configured validator, and if valid the method tied to the event within
 the service is called.
+
+#### Acknowledging Events
+
+When an event is received and processed the service will need to  acknowledge the event. This is done by calling the 
+`#acknowledge` method on the `Polyn::Context` object. If the service does not acknowledge the event, the event will
+remain in queue to be consumed.
 
 ## Validators
 A validator is a class that implements the `Polyn::Validators::Base` interface. The default validator is 
