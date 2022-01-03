@@ -27,10 +27,10 @@ RSpec.describe Polyn::ServiceManager do
     subject { Polyn::ServiceManager.spawn([service_1, service_2]) }
 
     it "should call #receive on the service" do
-      expect(service_1).to receive(:receive).with("test", context)
-      expect(service_2).to receive(:receive).with("test", context) { ev.set }
+      expect(service_1).to receive(:receive).with(context)
+      expect(service_2).to receive(:receive).with(context) { ev.set }
 
-      subject << [:receive, "test", context]
+      subject << [:receive, context]
 
       ev.wait(1)
     end

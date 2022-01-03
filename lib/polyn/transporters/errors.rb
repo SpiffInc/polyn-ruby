@@ -17,29 +17,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
-
-RSpec.describe Polyn::Service do
-  let(:ev) { Concurrent::Event.new }
-
-  subject do
-    Class.new(Polyn::Service) do
-      name "test-service"
-      event "test", :test
-
-      def test(_context); end
-    end
-  end
-
-  let(:context) { double(Polyn::Context, topic: "test") }
-
-  describe ":receive message" do
-    it "should call the appropriate event" do
-      expect_any_instance_of(subject).to receive(:test).with(context) { ev.set }
-
-      subject.receive(context)
-
-      ev.wait(1)
-    end
-  end
-end
+require_relative "errors/error"
+require_relative "errors/timeout_error"
+require_relative "errors/topic_not_found_error"

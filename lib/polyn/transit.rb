@@ -46,7 +46,7 @@ module Polyn
       # Set the service pool to use the Transit thread pool.
       Service.pool = pool
 
-      subscribe_to_events
+      subscribe_to_events!
     end
 
     ##
@@ -66,14 +66,16 @@ module Polyn
 
     attr_reader :transporter, :serializer, :origin, :service_manager
 
+    def events
+      @events ||= service_manager.ask!(:services).map { |s| s.events.values }.flatten
+    end
+
     # iterates through all the services and subscribes to the events
-    def subscribe_to_events
+    def subscribe_to_events!
       logger.info("subscribing to events")
-      service_manager.ask!(:services).each do |service|
-        service.events.each do |(_topic, event)|
-          logger.debug("service '#{service.name}' is subscribed to event '#{event.topic}'")
-          transporter << [:subscribe, event.topic]
-        end
+      events.each do |event|
+        logger.debug("service '#{event.service.name}' is subscribing ito event '#{event.topic}'")
+        transporter.subscribe!(event.service.name, event.topic)
       end
     end
 
@@ -98,48 +100,39 @@ module Polyn
       message = message_for(topic, payload)
 
       serialized = serializer.serialize(message.for_transit)
-      transporter << [:publish, topic, serialized]
+      transporter.publish!(topic, serialized)
     end
 
-    def receive(topic, payload)
-      serializer.deserialize(payload).tap do |message|
-        logger.info("received message from topic '#{topic}'")
-        logger.debug("message: #{message.inspect}")
+    def receive(message)
+      serializer.deserialize(message.data).tap do |deserialized|
+        logger.info("received message from topic '#{message.topic}'")
+        context = Context.new(
+          message: message,
+          raw:     Utils::Hash.deep_symbolize_keys(
+            Utils::Hash.deep_snake_case_keys(deserialized),
+          ),
+        )
 
-        context = Context.new(message: Utils::Hash.deep_symbolize_keys(message))
-
-        service_manager << [:receive, topic, context]
+        service_manager << [:receive, context]
       end
     end
 
     def configure_transporter(options)
-      transporter_class = infer_transporter(options)
+      transporter_class = Transporters.for(options)
       logger.info("transporter set to '#{transporter_class.name}'")
       @transporter      = transporter_class.spawn(
-        "transporter",
         Concurrent::Actor.current,
         transporter_config_from(options),
       )
+
+      transporter.connect!
     end
 
     def transporter_config_from(options)
       if options.is_a?(Hash)
-        options
+        options[:options]
       else
-        {
-          type: options.to_s,
-        }
-      end
-    end
-
-    def infer_transporter(options)
-      case options
-      when Hash
-        options[:type]
-      when Class
-        options
-      when Symbol, String
-        Transporters.const_get(Utils::String.to_class_name(options.to_s).to_sym)
+        {}
       end
     end
   end

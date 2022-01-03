@@ -17,29 +17,27 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
+module Polyn
+  module Transporters
+    ##
+    # Represents the raw, unserialized message from the transporter. Each transporter should subclass this
+    # class and create its own message class.
+    class Message
+      attr_accessor :data, :topic
 
-RSpec.describe Polyn::Service do
-  let(:ev) { Concurrent::Event.new }
+      ##
+      # @param topic [String] the topic the message is was received on
+      # @param data [String] the raw data received from the transporter
+      def initialize(topic, data)
+        @topic = topic
+        @data  = data
+      end
 
-  subject do
-    Class.new(Polyn::Service) do
-      name "test-service"
-      event "test", :test
-
-      def test(_context); end
-    end
-  end
-
-  let(:context) { double(Polyn::Context, topic: "test") }
-
-  describe ":receive message" do
-    it "should call the appropriate event" do
-      expect_any_instance_of(subject).to receive(:test).with(context) { ev.set }
-
-      subject.receive(context)
-
-      ev.wait(1)
+      ##
+      # Subclasses should implement this method to acknowledge that the message has been received.
+      def acknowledge
+        raise NotImplementedError
+      end
     end
   end
 end

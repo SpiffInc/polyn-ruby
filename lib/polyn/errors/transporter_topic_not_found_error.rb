@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -17,29 +15,9 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
-
-RSpec.describe Polyn::Service do
-  let(:ev) { Concurrent::Event.new }
-
-  subject do
-    Class.new(Polyn::Service) do
-      name "test-service"
-      event "test", :test
-
-      def test(_context); end
-    end
-  end
-
-  let(:context) { double(Polyn::Context, topic: "test") }
-
-  describe ":receive message" do
-    it "should call the appropriate event" do
-      expect_any_instance_of(subject).to receive(:test).with(context) { ev.set }
-
-      subject.receive(context)
-
-      ev.wait(1)
+module Polyn
+  module Errors
+    class TransporterTopicNotFoundError < Error
     end
   end
 end

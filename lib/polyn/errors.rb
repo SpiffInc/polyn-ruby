@@ -22,3 +22,5 @@ require_relative "service"
 require_relative "errors/error"
 require_relative "errors/service_name_error"
 require_relative "errors/payload_validation_error"
+
+require_relative "transporters/errors"

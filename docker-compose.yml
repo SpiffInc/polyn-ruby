@@ -1,0 +1,7 @@
+version: "3"
+
+services:
+  pubsub-emulator:
+    image: getalma/gcp-pubsub-emulator:latest
+    ports:
+      - "8085:8085"

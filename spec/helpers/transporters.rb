@@ -17,29 +17,51 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
+RSpec.shared_examples "a transporter" do
+  subject { described_class.spawn(transit, options) }
 
-RSpec.describe Polyn::Service do
   let(:ev) { Concurrent::Event.new }
+  let(:transit) { double(Polyn::Transit) }
 
-  subject do
-    Class.new(Polyn::Service) do
-      name "test-service"
-      event "test", :test
-
-      def test(_context); end
-    end
+  before :each do
+    subject.connect!
   end
 
-  let(:context) { double(Polyn::Context, topic: "test") }
+  after :each do
+    subject.disconnect!
+  end
 
-  describe ":receive message" do
-    it "should call the appropriate event" do
-      expect_any_instance_of(subject).to receive(:test).with(context) { ev.set }
+  describe "#publish and #subscribe" do
 
-      subject.receive(context)
+    it "should publish the provided message to the subscribed topic" do
+      expect(transit).to receive(:<<)
+        .with([:receive, instance_of(described_class::Message)]) do |_, message|
+        message.acknowledge
+        ev.set
+      end
+
+      subject.subscribe!("test", "test-topic")
+      subject.publish!("test-topic", "test-message")
 
       ev.wait(1)
     end
   end
+
+  # describe "#connect" do
+  #   it "should raise Polyn::Transporters::Errors::TimeoutError when a time out occurs during connect" do
+  #     pending
+  #   end
+  # end
+  #
+  # describe "#publish" do
+  #   it "should raise Polyn::Transporters::Errors::TimeoutError when a time out occurs during publish" do
+  #     pending
+  #   end
+  # end
+  #
+  # describe "#subscribe" do
+  #   it "should raise Polyn::Transporters::Errors::TimeoutError when a time out occurs during subscribe" do
+  #     pending
+  #   end
+  # end
 end

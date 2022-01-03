@@ -67,7 +67,7 @@ module Polyn
       # @return [::Hash] The snake cased hash.
       def self.deep_snake_case_keys(hash)
         hash.each_with_object({}) do |(key, value), result|
-          result[String.to_snake_case(key)] =
+          result[String.to_snake_case(key.to_s)] =
             value.is_a?(::Hash) ? deep_snake_case_keys(value) : value
         end
       end

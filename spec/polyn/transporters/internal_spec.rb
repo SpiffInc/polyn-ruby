@@ -18,16 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "spec_helper"
+require_relative "../../helpers/transporters"
 
 RSpec.describe Polyn::Transporters::Internal do
-  let(:transit) { double(Polyn::Transit) }
-  subject { described_class.new(transit, {}) }
-
-  describe "publish and subscribe" do
-    it "should subscribe and publish" do
-      expect(transit).to receive(:<<).with([:receive, "test", "{}"])
-      subject.subscribe("test")
-      subject.publish("test", "{}")
-    end
+  include_examples "a transporter" do
+    let(:options) { {} }
   end
 end
