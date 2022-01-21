@@ -21,13 +21,16 @@ require "json"
 
 module Polyn
   module Serializers
+    ##
+    # Handles serializing and deserializing data to and from JSON.
     class Json < Base
-      def serialize(data)
-        JSON.dump(data)
+      def serialize(event)
+        JSON.dump(event.to_h)
       end
 
       def deserialize(data)
-        JSON.parse(data)
+        hash = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
+        Event.new(hash)
       end
     end
   end
