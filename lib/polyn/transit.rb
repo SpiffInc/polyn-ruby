@@ -83,7 +83,6 @@ module Polyn
     attr_reader :transporter, :serializer, :origin, :service_manager
 
     def events
-      puts "\n\n" + service_manager.ask!(:services).to_s + "\n\n"
       @events ||= service_manager.ask!(:services).map { |s| s.events.values }.flatten
     end
 
@@ -112,7 +111,6 @@ module Polyn
       logger.info("publishing to topic '#{event.type}'")
 
       serialized = serializer.serialize(event)
-      puts transporter.inspect
       transporter.publish!(event.type, serialized)
     end
 
