@@ -71,12 +71,13 @@ module Polyn
     # @param topic [String] the topic to publish to
     # @param payload [Hash] the message to publish
     def publish(topic, payload)
-      payload = Utils::Hash.deep_camelize_keys(payload).freeze
-      errors  = validator.validate(topic, payload)
+      event = Event.new({
+        type:   topic,
+        source: name,
+        data:   payload,
+      })
 
-      raise Errors::PayloadValidationError, errors unless errors.empty?
-
-      transit << [:publish, topic, payload]
+      transit << [:publish, topic, event]
     end
 
     ##

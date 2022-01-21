@@ -21,12 +21,13 @@ require "spec_helper"
 require_relative "../../lib/polyn/validators/json_schema"
 
 RSpec.describe Polyn::Application do
+  let(:transit) { double(Polyn::Transit) }
   let(:service_manager) { double(Polyn::ServiceManager) }
   let(:transit) { double(Polyn::Transit) }
 
   subject do
     described_class.new(
-      name:      "MyApp",
+      name:      "/my_app",
       validator: Polyn::Validators::JsonSchema.new(
         prefix: File.expand_path("../fixtures", __dir__),
         file:   true,
@@ -46,27 +47,31 @@ RSpec.describe Polyn::Application do
     end
 
     it "sets up the transit" do
-      expect(Polyn::Transit).to receive(:spawn).and_return(service_manager)
+      expect(Polyn::Transit).to receive(:spawn).and_return(transit)
 
       subject
     end
   end
 
   describe "#publish" do
-    context "invalid payload" do
-      it "raises Polyn::Errors::ValidationError" do
-        expect do
-          subject.publish("calc.mult", { wrong: "payload" })
-        end.to raise_error(Polyn::Errors::PayloadValidationError)
-      end
+    before :each do
+      allow(subject).to receive(:transit).and_return(transit)
     end
 
-    context "snake cased keys" do
-      it "camel cases the keys before validation" do
-        expect do
-          subject.publish("calc.mult", { a: 1, b: 2 })
-        end.to_not raise_exception
-      end
+    let(:event) { instance_double(Polyn::Event) }
+
+    it "publishes an event to the transit" do
+      expect(Polyn::Event).to receive(:new).with({
+        type:   "test",
+        source: "/my_app",
+        data:   {
+          foo: "bar",
+        },
+      }).and_return(event)
+
+      expect(transit).to receive(:<<).with([:publish, "test", event])
+
+      subject.publish("test", { foo: "bar" })
     end
   end
 end

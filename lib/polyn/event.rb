@@ -55,7 +55,8 @@ module Polyn
     attr_reader :data
 
     def initialize(hash)
-      @specversion = hash.has_key?(:specversion) ? hash[:specversion] : "1.0"
+      @specversion = hash.key?(:specversion) ? hash[:specversion] : "1.0"
+
       if @specversion != CLOUD_EVENT_VERSION
         raise UnsupportedVersionError, "Unsupported version: '#{hash[:specversion]}'"
       end
@@ -66,5 +67,16 @@ module Polyn
       @time        = hash.fetch(:time, Time.now.utc.iso8601)
       @data        = hash.fetch(:data)
     end
+  end
+
+  def to_h
+    {
+      specversion: specversion,
+      id:          id,
+      type:        type,
+      source:      source,
+      time:        time,
+      data:        data,
+    }
   end
 end
