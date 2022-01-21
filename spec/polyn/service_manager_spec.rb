@@ -18,13 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 RSpec.describe Polyn::ServiceManager do
+  let(:service_1) { class_double(Polyn::Service) }
+  let(:service_2) { class_double(Polyn::Service) }
+  subject { Polyn::ServiceManager.spawn(services: [service_1, service_2]) }
+
   describe ":receive message" do
     let(:context) { instance_double(Polyn::Context) }
-    let(:service_1) { class_double(Polyn::Service) }
-    let(:service_2) { class_double(Polyn::Service) }
+
     let(:ev) { Concurrent::Event.new }
 
-    subject { Polyn::ServiceManager.spawn([service_1, service_2]) }
 
     it "should call #receive on the service" do
       expect(service_1).to receive(:receive).with(context)
@@ -33,6 +35,12 @@ RSpec.describe Polyn::ServiceManager do
       subject << [:receive, context]
 
       ev.wait(1)
+    end
+  end
+
+  describe "services" do
+    it "should be capable of returning all services" do
+      expect(subject.ask!(:services)).to eq([service_1, service_2])
     end
   end
 end

@@ -83,6 +83,7 @@ module Polyn
     attr_reader :transporter, :serializer, :origin, :service_manager
 
     def events
+      puts "\n\n" + service_manager.ask!(:services).to_s + "\n\n"
       @events ||= service_manager.ask!(:services).map { |s| s.events.values }.flatten
     end
 

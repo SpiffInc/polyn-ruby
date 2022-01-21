@@ -21,7 +21,7 @@ module Polyn
   ##
   # Represents a context in which a Polyn event is evaluated.
   class Context
-    attr_reader :event, :envelope
+    attr_reader :event, :envelope, :type, :data
 
     ##
     # @param envelope  [Polyn::Transporters::Envelope] the event envelope from the configured
@@ -29,6 +29,8 @@ module Polyn
     def initialize(envelope:, event:)
       @envelope = envelope
       @event    = event
+      @type     = event.type
+      @data     = event.data
     end
 
     ##

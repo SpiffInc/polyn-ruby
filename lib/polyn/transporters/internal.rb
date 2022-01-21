@@ -45,15 +45,16 @@ module Polyn
         true
       end
 
-      def publish(topic, event)
-        logger.debug("publishing to topic '#{topic}'")
-        tx_message = Envelope.new(topic, event)
+      def publish(type, event)
+        logger.debug("publishing to topic '#{type}'")
+        tx_message = Envelope.new(type, event)
 
-        transit << [:receive, tx_message] if subscriptions.include?(topic)
+        transit << [:receive, tx_message] if subscriptions.include?(type)
       end
 
-      def subscribe(_service_name, topic)
-        subscriptions << topic
+      def subscribe(_service_name, type)
+        logger.debug("subscribing to topic '#{type}'")
+        subscriptions << type
       end
 
       private

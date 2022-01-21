@@ -18,45 +18,46 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "spec_helper"
-require_relative "../../../lib/polyn/validators/json_schema"
 
 RSpec.describe "Internal Transporter with JSON Serializer" do
   let(:result) { Concurrent::IVar.new }
 
   let(:calc) do
     Class.new(Polyn::Service) do
+      def self.result
+        @result ||= Concurrent::IVar.new
+      end
+
       name "calc"
 
       event "calc.mult", :mult
       event "calc.div", :div
 
-      def mult(_ctx); end
+      def mult(ctx)
+        self.class.result.set(ctx.data[:a] * ctx.data[:b])
+      end
     end
   end
 
   subject do
     Polyn.start(
-      name:        "test",
-      validator:   Polyn::Validators::JsonSchema.new(
-        prefix: File.expand_path("../../fixtures", __dir__),
-        file:   true,
-      ),
-      transporter: :inernal,
-      serializer:  :json,
-      services:    [calc],
+      name:            "test",
+      transporter:     :internal,
+      serializer:      :json,
+      service_manager: {
+        services: [calc],
+      },
     )
   end
 
   describe "publishing and subscribing" do
     it "should publish and subscribe" do
       subject
-      expect_any_instance_of(calc).to receive(:mult) { |_class, ctx|
-                                        result.set(ctx.payload[:a] * ctx.payload[:b])
-                                      }
-
       Polyn.publish("calc.mult", a: 2, b: 3)
 
-      result.wait(1)
+      res = calc.result.wait(1)
+
+      expect(res.value).to eq(6)
     end
   end
 end

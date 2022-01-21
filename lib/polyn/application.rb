@@ -59,7 +59,7 @@ module Polyn
       })
 
       logger.debug("starting service manager")
-      @service_manager = ServiceManager.spawn(options.fetch(:services_manager, { services: [] }))
+      @service_manager = ServiceManager.spawn(options.fetch(:service_manager, { services: [] }))
       logger.debug("starting transit")
       @transit         = Transit.spawn(service_manager, transit)
     end
