@@ -21,13 +21,12 @@ require "spec_helper"
 require_relative "../../lib/polyn/validators/json_schema"
 
 RSpec.describe Polyn::Application do
-  let(:transit) { double(Polyn::Transit) }
-  let(:service_manager) { double(Polyn::ServiceManager) }
-  let(:transit) { double(Polyn::Transit) }
+  let(:service_manager) { instance_double(Polyn::ServiceManager) }
+  let(:transit) { instance_double(Polyn::Transit) }
 
   subject do
     described_class.new(
-      name:      "/my_app",
+      name:      "my_app",
       validator: Polyn::Validators::JsonSchema.new(
         prefix: File.expand_path("../fixtures", __dir__),
         file:   true,
@@ -37,7 +36,7 @@ RSpec.describe Polyn::Application do
 
   describe "#initialize" do
     it "requires and sets the name" do
-      expect(subject.name).to eq("MyApp")
+      expect(subject.name).to eq("my_app")
     end
 
     it "sets up the service manager" do

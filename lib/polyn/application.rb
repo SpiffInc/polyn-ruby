@@ -73,7 +73,7 @@ module Polyn
     def publish(topic, payload)
       event = Event.new({
         type:   topic,
-        source: name,
+        source: "/#{name}",
         data:   payload,
       })
 
