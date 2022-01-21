@@ -26,30 +26,28 @@ RSpec.describe Polyn::Transit do
 
 
   let(:ev) { Concurrent::Event.new }
-  let(:message) { instance_double(Polyn::Message, for_transit: message_for_transit) }
+  let(:event) { instance_double(Polyn::Event) }
   let(:service_manager) { instance_double(Polyn::ServiceManager) }
   let(:transporter) { instance_double(Polyn::Transporters::Base::Wrapper, connect!: true) }
   let(:serializer) { instance_double(Polyn::Serializers::Json) }
   let(:message_for_transit) { double("MessageForTransit") }
-  let(:serialized_message) { double("SerializedMessage") }
+  let(:serialized_event) { double("SerializedMessage") }
 
 
 
   before :each do
-    allow(Polyn::Message).to receive(:new).and_return(message)
+    allow(Polyn::Event).to receive(:new).and_return(event)
     allow(Polyn::Transporters::Internal).to receive(:spawn).and_return(transporter)
     allow(Polyn::Serializers::Json).to receive(:new).and_return(serializer)
     allow(service_manager).to receive(:ask!).and_return([])
   end
 
   describe "#publish" do
-
-
     it "should publish the serialized data" do
-      expect(serializer).to receive(:serialize).with(message.for_transit).and_return(serialized_message)
-      expect(transporter).to receive(:publish!).with("foo", serialized_message) { ev.set }
+      expect(serializer).to receive(:serialize).with(event).and_return(serialized_event)
+      expect(transporter).to receive(:publish!).with("foo", serialized_event) { ev.set }
 
-      subject << [:publish, "foo", message]
+      subject << [:publish, "foo", event]
 
       ev.wait(1)
     end

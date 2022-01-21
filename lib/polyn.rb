@@ -28,7 +28,6 @@ require_relative "polyn/errors"
 require_relative "polyn/transporters"
 require_relative "polyn/utils"
 require_relative "polyn/serializers"
-require_relative "polyn/message"
 require_relative "polyn/context"
 require_relative "polyn/event"
 

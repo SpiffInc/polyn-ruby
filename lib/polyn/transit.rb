@@ -87,19 +87,15 @@ module Polyn
       })
     end
 
-    def message_for(topic, payload)
-      Message.new(
-        origin:  origin,
-        topic:   topic,
-        payload: payload,
-      )
-    end
-
-    def publish(topic, payload)
+    ##
+    # Publishes the event to the configured transporter.
+    #
+    # @param topic [String] the topic to publish to
+    # @param event [Polyn::Event] the event to publish
+    def publish(topic, event)
       logger.info("publishing to topic '#{topic}'")
-      message = message_for(topic, payload)
 
-      serialized = serializer.serialize(message.for_transit)
+      serialized = serializer.serialize(event)
       transporter.publish!(topic, serialized)
     end
 
