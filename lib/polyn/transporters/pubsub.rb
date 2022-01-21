@@ -39,7 +39,7 @@ module Polyn
     class Pubsub < Base
       ##
       # @private
-      class Message < Transporters::Envelope
+      class Envelope < Transporters::Envelope
         def initialize(topic, msg)
           super(topic, msg.data)
           @msg = msg
@@ -126,7 +126,7 @@ module Polyn
         logger.debug("setting listener")
         subscriber = subscription.listen do |message|
           logger.debug("received message on '#{subscription.name}'")
-          tx_message = Message.new(subscription.topic.name.split("/").last, message)
+          tx_message = Envelope.new(subscription.topic.name.split("/").last, message)
 
           transit << [:receive, tx_message]
         end

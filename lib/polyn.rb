@@ -22,7 +22,6 @@ require "semantic_logger"
 
 require_relative "polyn/version"
 require_relative "polyn/application"
-require_relative "polyn/validators"
 require_relative "polyn/service"
 require_relative "polyn/errors"
 require_relative "polyn/transporters"
