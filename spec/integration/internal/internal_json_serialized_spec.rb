@@ -20,8 +20,6 @@
 require "spec_helper"
 
 RSpec.describe "Internal Transporter with JSON Serializer" do
-  let(:result) { Concurrent::IVar.new }
-
   let(:calc) do
     Class.new(Polyn::Service) do
       def self.result
