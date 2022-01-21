@@ -17,6 +17,8 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+require "securerandom"
+
 module Polyn
   ##
   # Represents an event. Events follow the [Cloudevents](https://github.com/cloudevents)
@@ -67,16 +69,16 @@ module Polyn
       @time        = hash.fetch(:time, Time.now.utc.iso8601)
       @data        = hash.fetch(:data)
     end
-  end
 
-  def to_h
-    {
-      specversion: specversion,
-      id:          id,
-      type:        type,
-      source:      source,
-      time:        time,
-      data:        data,
-    }
+    def to_h
+      {
+        specversion: specversion,
+        id:          id,
+        type:        type,
+        source:      source,
+        time:        time,
+        data:        data,
+      }
+    end
   end
 end

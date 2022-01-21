@@ -29,8 +29,8 @@ module Polyn
       end
 
       def deserialize(data)
-        hash = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
-        event = Event.new(hash)
+        hash                  = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
+        event                 = Event.new(hash)
         event.datacontenttype = "application/json"
         event
       end

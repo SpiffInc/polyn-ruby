@@ -39,7 +39,7 @@ module Polyn
     class Pubsub < Base
       ##
       # @private
-      class Message < Transporters::Message
+      class Message < Transporters::Envelope
         def initialize(topic, msg)
           super(topic, msg.data)
           @msg = msg

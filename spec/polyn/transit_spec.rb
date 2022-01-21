@@ -21,50 +21,70 @@ require "spec_helper"
 
 RSpec.describe Polyn::Transit do
   subject do
-    Polyn::Transit.spawn(service_manager, origin: "origin", transporter: :internal)
+    Polyn::Transit.spawn(service_manager, origin: "origin",
+transporter: :internal)
   end
 
+  let(:service_manager) { Polyn::ServiceManager.spawn(services: []) }
 
   let(:ev) { Concurrent::Event.new }
-  let(:event) { instance_double(Polyn::Event) }
-  let(:service_manager) { instance_double(Polyn::ServiceManager) }
-  let(:transporter) { instance_double(Polyn::Transporters::Base::Wrapper, connect!: true) }
-  let(:serializer) { instance_double(Polyn::Serializers::Json) }
-  let(:message_for_transit) { double("MessageForTransit") }
-  let(:serialized_event) { double("SerializedMessage") }
-
-
-
-  before :each do
-    allow(Polyn::Event).to receive(:new).and_return(event)
-    allow(Polyn::Transporters::Internal).to receive(:spawn).and_return(transporter)
-    allow(Polyn::Serializers::Json).to receive(:new).and_return(serializer)
-    allow(service_manager).to receive(:ask!).and_return([])
-  end
-
   describe "#publish" do
-    it "should publish the serialized data" do
-      expect(serializer).to receive(:serialize).with(event).and_return(serialized_event)
-      expect(transporter).to receive(:publish!).with("foo", serialized_event) { ev.set }
+    let(:event) do
+      Polyn::Event.new({
+        source: "/my_app",
+        type:   "test",
+        data:   { foo: "bar" },
+      })
+    end
 
-      subject << [:publish, "foo", event]
+    it "should publish the serialized data" do
+      expect_any_instance_of(Polyn::Transporters::Internal::Wrapper).to receive(:publish!).with(
+        "test", instance_of(String)
+      ) do |_, _, serialized|
+        expect(JSON.parse(serialized)).to eq({
+          "type"        => "test",
+          "data"        => { "foo" => "bar" },
+          "id"          => event.id,
+          "source"      => "/my_app",
+          "specversion" => "1.0",
+          "time"        => event.time,
+        })
+
+        ev.set
+      end
+
+      subject << [:publish, event]
 
       ev.wait(1)
     end
   end
 
   describe ":receive message" do
-    let(:context) { instance_double(Polyn::Context) }
-    let(:payload) { { bar: "baz" } }
-    let(:json) { payload.to_json }
-    let(:message) { Polyn::Transporters::Message.new("test", json) }
+    let(:event_json) do
+      {
+        source: "/my_app",
+        type:   "test",
+        data:   {
+          foo: "bar",
+        },
+        time:   Time.now.utc.iso8601,
+      }.to_json
+    end
+
+    let(:envelope) do
+      Polyn::Transporters::Internal::Envelope.new("test", event_json)
+    end
 
     it "should send the deserializes the message and sends the context to the service_manager" do
-      expect(serializer).to receive(:deserialize).with(json).and_return(payload)
-      expect(Polyn::Context).to receive(:new).with(**{ message: message, raw: payload }).and_return(context)
-      expect(service_manager).to receive(:<<).with([:receive, context]) { ev.set }
+      expect(service_manager).to receive(:<<).with([:receive,
+                                                    instance_of(Polyn::Context)]) do |_, context|
+        expect(context.envelope).to eq(envelope)
+        expect(context.event).to be_an_instance_of(Polyn::Event)
 
-      subject << [:receive, message]
+        ev.set
+      end
+
+      subject << [:receive, envelope]
 
       ev.wait(1)
     end

@@ -31,9 +31,9 @@ module Polyn
 
     ##
     # @param services [Array<Polyn::Service>] the services for this node.
-    def initialize(services)
+    def initialize(config)
       super()
-      @services = services
+      @services = config.fetch(:services, [])
     end
 
     ##

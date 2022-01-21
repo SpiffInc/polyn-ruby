@@ -26,7 +26,7 @@ module Polyn
     class Internal < Base
       ##
       # @private
-      class Message < Polyn::Transporters::Message
+      class Envelope < Polyn::Transporters::Envelope
         def acknowledge; end
       end
 
@@ -45,9 +45,9 @@ module Polyn
         true
       end
 
-      def publish(topic, message)
+      def publish(topic, event)
         logger.debug("publishing to topic '#{topic}'")
-        tx_message = Message.new(topic, message)
+        tx_message = Envelope.new(topic, event)
 
         transit << [:receive, tx_message] if subscriptions.include?(topic)
       end

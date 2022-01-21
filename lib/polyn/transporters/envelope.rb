@@ -22,15 +22,15 @@ module Polyn
     ##
     # Represents the raw, unserialized message from the transporter. Each transporter should subclass this
     # class and create its own message class.
-    class Message
-      attr_accessor :data, :topic
+    class Envelope
+      attr_accessor :event, :type
 
       ##
-      # @param topic [String] the topic the message is was received on
-      # @param data [String] the raw data received from the transporter
-      def initialize(topic, data)
-        @topic = topic
-        @data  = data
+      # @param type [String] the the type of event received
+      # @param event [String] the raw data received from the transporter
+      def initialize(type, event)
+        @type  = type
+        @event = event
       end
 
       ##

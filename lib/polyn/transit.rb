@@ -90,23 +90,25 @@ module Polyn
     ##
     # Publishes the event to the configured transporter.
     #
-    # @param topic [String] the topic to publish to
     # @param event [Polyn::Event] the event to publish
-    def publish(topic, event)
-      logger.info("publishing to topic '#{topic}'")
+    def publish(event)
+      logger.info("publishing to topic '#{event.type}'")
 
       serialized = serializer.serialize(event)
-      transporter.publish!(topic, serialized)
+      puts transporter.inspect
+      transporter.publish!(event.type, serialized)
     end
 
-    def receive(message)
-      serializer.deserialize(message.data).tap do |deserialized|
-        logger.info("received message from topic '#{message.topic}'")
+    ##
+    # Receives an event from the trnasporter.
+    #
+    # @param envelope [Polyn::Transporters::Envelope] the envelope to receive
+    def receive(envelope)
+      serializer.deserialize(envelope.event).tap do |event|
+        logger.info("received message from topic '#{envelope.type}'")
         context = Context.new(
-          message: message,
-          raw:     Utils::Hash.deep_symbolize_keys(
-            Utils::Hash.deep_snake_case_keys(deserialized),
-          ),
+          event:    event,
+          envelope: envelope,
         )
 
         service_manager << [:receive, context]
