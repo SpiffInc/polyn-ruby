@@ -18,57 +18,21 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "spec_helper"
-require_relative "../../lib/polyn/validators/json_schema"
 
 RSpec.describe Polyn::Application do
-  let(:service_manager) { instance_double(Polyn::ServiceManager) }
-  let(:transit) { instance_double(Polyn::Transit) }
-
   subject do
     described_class.new(
-      name:      "my_app",
-      validator: Polyn::Validators::JsonSchema.new(
-        prefix: File.expand_path("../fixtures", __dir__),
-        file:   true,
-      ),
+      name: "my_app",
     )
   end
 
-  describe "#initialize" do
-    it "requires and sets the name" do
-      expect(subject.name).to eq("my_app")
-    end
-
-    it "sets up the service manager" do
-      expect(Polyn::ServiceManager).to receive(:spawn).and_return(service_manager)
-
-      subject
-    end
-
-    it "sets up the transit" do
-      expect(Polyn::Transit).to receive(:spawn).and_return(transit)
-
-      subject
-    end
-  end
-
   describe "#publish" do
-    before :each do
-      allow(subject).to receive(:transit).and_return(transit)
-    end
-
-    let(:event) { instance_double(Polyn::Event) }
-
     it "publishes an event to the transit" do
-      expect(Polyn::Event).to receive(:new).with({
-        type:   "test",
-        source: "/my_app",
-        data:   {
-          foo: "bar",
-        },
-      }).and_return(event)
-
-      expect(transit).to receive(:<<).with([:publish, "test", event])
+      expect_any_instance_of(Polyn::Transit::Wrapper).to receive(:publish).with(instance_of(Polyn::Event)) do |_, event|
+        expect(event.source).to eq("/my_app")
+        expect(event.type).to eq("test")
+        expect(event.data).to eq(foo: "bar")
+      end
 
       subject.publish("test", { foo: "bar" })
     end

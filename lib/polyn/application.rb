@@ -52,7 +52,6 @@ module Polyn
       @hostname = Socket.gethostname
       @pid      = Process.pid
 
-      configure_validator(options.fetch(:validator))
       transit = options.fetch(:transit, {})
 
       transit.merge!({
@@ -60,7 +59,7 @@ module Polyn
       })
 
       logger.debug("starting service manager")
-      @service_manager = ServiceManager.spawn(options.fetch(:services, []))
+      @service_manager = ServiceManager.spawn(options.fetch(:services_manager, { services: [] }))
       logger.debug("starting transit")
       @transit         = Transit.spawn(service_manager, transit)
     end
@@ -68,16 +67,16 @@ module Polyn
     ##
     # Publishes a message to the transit `Actor`
     #
-    # @param topic [String] the topic to publish to
+    # @param type [String] the event type to publish
     # @param payload [Hash] the message to publish
-    def publish(topic, payload)
+    def publish(type, payload)
       event = Event.new({
-        type:   topic,
+        type:   type,
         source: "/#{name}",
         data:   payload,
       })
 
-      transit << [:publish, topic, event]
+      transit.publish(event)
     end
 
     ##
@@ -99,14 +98,10 @@ module Polyn
 
     private
 
-    attr_reader :service_manager, :container, :log_options, :transit, :validator, :hostname, :pid
+    attr_reader :service_manager, :container, :log_options, :transit, :hostname, :pid
 
     def origin
       "#{name}/#{hostname}/#{pid}"
-    end
-
-    def configure_validator(validator)
-      @validator = Validators.for(validator)
     end
   end
 end

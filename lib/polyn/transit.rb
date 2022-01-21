@@ -22,10 +22,26 @@ module Polyn
   # Abstracts the transportation logic of Polyn.  Transit works with the configured
   # Transporter to send the message to the Event Bus.
   class Transit < Concurrent::Actor::RestartingContext
+    ##
+    # @private
+    class Wrapper
+      def initialize(actor)
+        @actor = actor
+      end
+
+      def publish(*args)
+        actor << [:publish, *args]
+      end
+
+      private
+
+      attr_reader :actor
+    end
+
     include SemanticLogger::Loggable
 
     def self.spawn(*args)
-      super(:transit, *args)
+      Wrapper.new(super(:transit, *args))
     end
 
     ##
