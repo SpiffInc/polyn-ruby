@@ -73,17 +73,17 @@ module Polyn
         logger.info("disconnected")
       end
 
-      def publish(topic, message)
-        logger.debug("publishing to topic '#{topic}'")
-        gcp_topic = client.topic(topic)
+      def publish(type, event)
+        logger.debug("publishing to topic '#{type}'")
+        gcp_topic = client.topic(type)
         logger.debug("got topic '#{gcp_topic}'")
 
-        gcp_topic.publish(message)
+        gcp_topic.publish(event)
         logger.debug("published message")
       rescue Google::Cloud::DeadlineExceededError => e
-        logger.error("timeout while publishing to topic '#{topic}'", e)
+        logger.error("timeout while publishing to topic '#{type}'", e)
         raise Errors::TimeoutError.new(e,
-          "the transporter timed out attempting to topic '#{topic}'")
+          "the transporter timed out attempting to topic '#{type}'")
       end
 
       def subscribe(service_name, topic)
