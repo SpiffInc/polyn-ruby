@@ -55,6 +55,10 @@ RSpec.describe Polyn::Transporters::Pubsub do
 
         expect { subject.connect! }.to raise_exception(Polyn::Transporters::Errors::TimeoutError)
       end
+
+      it "should connect to the pubsub instance without exception when a timeout does not occur" do
+        expect { subject.connect! }.not_to raise_exception
+      end
     end
 
     describe "#publish" do
@@ -80,6 +84,13 @@ RSpec.describe Polyn::Transporters::Pubsub do
             "test-message")
         end.to raise_exception(Polyn::Transporters::Errors::TimeoutError)
       end
+
+      it "should publish a message to the pubsub instance without exception when a timeout does not occur" do
+        expect do
+          subject.publish!("test-topic",
+            "test-message")
+        end.not_to raise_exception
+      end
     end
 
     describe "#subscribe" do
@@ -96,6 +107,12 @@ RSpec.describe Polyn::Transporters::Pubsub do
         expect do
           subject.subscribe!("test", "test-non-topic")
         end.to raise_exception(Polyn::Transporters::Errors::TopicNotFoundError)
+      end
+
+      it "should subscribe to the pubsub instance without exception when a timeout does not occur" do
+        expect do
+          subject.subscribe!("test", "test-topic")
+        end.not_to raise_exception
       end
     end
   end

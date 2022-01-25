@@ -19,9 +19,8 @@
 
 RSpec.shared_examples "a transporter" do
   subject { described_class.spawn(transit, options) }
-
-  let(:ev) { Concurrent::Event.new }
   let(:transit) { double(Polyn::Transit) }
+  let(:ev) { Concurrent::Event.new }
 
   before :each do
     subject.connect!
