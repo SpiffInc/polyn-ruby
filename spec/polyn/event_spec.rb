@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 RSpec.describe Polyn::Event do
+  UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.freeze
+  
   subject do
     Polyn::Event.new(
       type:   "test.event",
@@ -52,7 +54,7 @@ RSpec.describe Polyn::Event do
   describe "#id" do
     it "defaults to a uuid" do
       expect(subject.id).to_not be_nil
-      expect(subject.id =~ /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/).to be_truthy
+      expect(subject.id =~ UUID_REGEX).to be_truthy
     end
 
     it "returns the passed id" do
