@@ -30,7 +30,7 @@ RSpec.describe Polyn::Event do
 
   describe "#specversion" do
     it "returns the default specversion" do
-      expect(subject.specversion).to eq("1.0")
+      expect(subject.specversion).to eq(CLOUD_EVENT_VERSION)
     end
 
     context "invalid version" do
