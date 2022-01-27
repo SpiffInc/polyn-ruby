@@ -19,82 +19,78 @@
 
 require "spec_helper"
 require "google/cloud/pubsub"
-
-require_relative "../../../lib/polyn/validators/json_schema"
-
 RSpec.describe "Pubsub Transporter with JSON Serializer" do
-  let(:result) { Concurrent::IVar.new }
-
   let(:calc) do
     Class.new(Polyn::Service) do
+      def self.result
+        @result ||= Concurrent::IVar.new
+      end
+
       name "calc"
 
       event "calc.mult", :mult
       event "calc.div", :div
 
-      def mult(_ctx); end
+      def mult(ctx)
+        self.class.result.set(ctx.data[:a] * ctx.data[:b])
+      end
     end
   end
 
-  let(:options) do
-    {
-      project_id:    "test-project",
-      emulator_host: "localhost:8085",
-    }
-  end
-
-  let(:pubsub_client) { Google::Cloud::Pubsub.new(**options) }
-
   subject do
     Polyn.start(
-      name:       "test",
-      validator:  Polyn::Validators::JsonSchema.new(
-        prefix: File.expand_path("../../fixtures", __dir__),
-        file:   true,
-      ),
-      transit:    {
+      name:            "test",
+      transit:         {
         transporter: {
           type:    :pubsub,
-          options: options,
+          options: @options,
         },
       },
-      serializer: :json,
-      services:   [calc],
+      serializer:      :json,
+      service_manager: {
+        services: [calc],
+      },
     )
   end
 
-  before :each do
-    topic   = pubsub_client.topic("calc.mult")
-    topic ||= pubsub_client.create_topic("calc.mult")
+  before :all do
+    @options = {
+      project_id:    "test-project",
+      emulator_host: "localhost:8085",
+    }
 
-    subscription   = pubsub_client.subscription("test-topic")
+    @pubsub_client = Google::Cloud::Pubsub.new(**@options)
+
+    topic   = @pubsub_client.topic("calc.mult")
+    topic ||= @pubsub_client.create_topic("calc.mult")
+
+    subscription   = @pubsub_client.subscription("calc-cal.mult")
     topic.subscribe("calc-calc.mult") unless subscription
 
-    topic   = pubsub_client.topic("calc.div")
-    topic ||= pubsub_client.create_topic("calc.div")
+    topic   = @pubsub_client.topic("calc.div")
+    topic ||= @pubsub_client.create_topic("calc.div")
 
+    subscription   = @pubsub_client.subscription("calc-calc.div")
     topic.subscribe("calc-calc.div") unless subscription
-
   end
 
-  after :each do
-    pubsub_client.subscription("calc-calc.mult")&.delete
-    pubsub_client.topic("calc.mult")&.delete
+  after :all do
+    @pubsub_client.subscription("calc-calc.mult")&.delete
+    @pubsub_client.topic("calc.mult")&.delete
 
-    pubsub_client.subscription("calc-calc.div")&.delete
-    pubsub_client.topic("calc.div")&.delete
+    @pubsub_client.subscription("calc-calc.div")&.delete
+    @pubsub_client.topic("calc.div")&.delete
   end
 
   describe "publishing and subscribing" do
     it "should publish and subscribe" do
       subject
-      expect_any_instance_of(calc).to receive(:mult) { |_class, ctx|
-        result.set(ctx.payload[:a] * ctx.payload[:b])
-      }
 
       Polyn.publish("calc.mult", a: 2, b: 3)
 
-      result.wait(1)
+      res = calc.result.wait(1)
+
+      expect(res.value).to eq(6)
     end
   end
 end
