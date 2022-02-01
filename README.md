@@ -49,6 +49,17 @@ Add this line to your application's Gemfile:
 gem 'polyn'
 ```
 
+If using pubsub as your transporter, you will also need to add the following to your application's Gemfile:
+
+ ```ruby
+ gem 'google-cloud-pubsub'
+ ```
+If using JSON as your serializer, you will also need to add the following to your application's Gemfile:
+
+ ```ruby
+ gem 'json-schema'
+ ```
+
 And then execute:
 
     $ bundle install

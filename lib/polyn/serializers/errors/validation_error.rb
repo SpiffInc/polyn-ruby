@@ -16,15 +16,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 module Polyn
-  module Errors
-    ##
-    # Called when a payload is invalid.
-    class PayloadValidationError < Error
-      attr_reader :errors
+  module Serializers
+    module Errors
+      ##
+      # ValidationError is raised when a serializer encounters a validation error.
+      class ValidationError < Errors::Error
+        attr_reader :errors
 
-      def initialize(errors)
-        @errors = errors
-        super("Event payload could not be validated:\n#{errors.inspect}")
+        def initialize(error)
+          super("Event validation failed #{error}")
+        end
       end
     end
   end

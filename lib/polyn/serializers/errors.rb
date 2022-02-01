@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -17,30 +15,4 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-require_relative "serializers/base"
-require_relative "serializers/json"
-require_relative "serializers/errors"
-
-module Polyn
-  ##
-  # Serializers handle the serialization and deserialization of message payloads
-  module Serializers
-    ##
-    # Returns the serializer for the given type
-    #
-    # @param type [Symbol] The type of serializer.
-    #
-    # @return [Class<Polyn::Serializer] The serializer class.
-    def self.for(type)
-      case type
-      when :json
-        Json
-      else
-        raise ArgumentError, "Unknown serializer type: #{type}"
-      end
-    end
-  end
-end
+require_relative "./errors/validation_error"
