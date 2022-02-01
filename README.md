@@ -3,9 +3,10 @@
 
 Polyn is a dead simple service framework designed to be language agnostic while
 and providing a simple, yet powerful, abstraction layer for building reactive events
-based services.
+based services. It is heavily inspired by [Akka](https://akka.io) and [Moleculer](https://moleculer.services), and 
+attempts to closely follow the [Reactive Manifesto](http://jonasboner.com/reactive-manifesto-1-0/) by adhering to the 
+following principles:
 
-According to [Jonas Boner](http://jonasboner.com/), reactive Microservices require you to:
 1. Follow the principle “do one thing, and one thing well” in defining service boundaries
 2. Isolate the services
 3. Ensure services act autonomously
@@ -16,6 +17,29 @@ According to [Jonas Boner](http://jonasboner.com/), reactive Microservices requi
 Polyn implements this pattern in a manner that can be applied to multiple programming
 languages, such as Ruby, Elixir, or Python, enabling you to build services that can
 communicate regardless of the language you use.
+
+Rather than defining its own event schema, Polyn uses [Cloud Events](https://github.com/cloudevents/spec) and strictly
+enforces the event format. This means that you can use Polyn to build services that can be used by other services,
+or natively interact with things such as GCP Cloud Functions.
+
+## Transporters
+
+Transporters define how a service communicates with other services. They are responsible for translating events into
+a consumable format for the specified transport bus. Polyn currently supports the following transporters:
+
+ * Internal (in-process, can be used for local development).
+ * [Google Pub/Sub](https://cloud.google.com/pubsub).
+
+Transporters are designed to be used interchangeably, which means a developer can expect a service developed locally on
+one transporter, can reliably utilize the same service on another transporter in production.
+
+## Serializers
+
+Serializers are responsible for serializing and deserializing events. They are designed to be used interchangeably,
+and will validate the event format before dispatching the event and before processing an incoming event. Polyn currently
+supports the following serializers:
+
+ * JSON
 
 ## Installation
 
