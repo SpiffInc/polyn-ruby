@@ -53,7 +53,7 @@ transporter: :internal)
         ev.set
       end
 
-      subject << [:publish, event]
+      subject.publish(event)
 
       ev.wait(1)
     end
@@ -73,6 +73,11 @@ transporter: :internal)
 
     let(:envelope) do
       Polyn::Transporters::Internal::Envelope.new("test", event_json)
+    end
+
+    subject do
+      Polyn::Transit.spawn(service_manager, origin: "origin",
+                                    transporter: :internal).instance_variable_get(:@actor)
     end
 
     it "should send the deserializes the message and sends the context to the service_manager" do
