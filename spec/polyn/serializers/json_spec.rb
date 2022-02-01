@@ -26,9 +26,10 @@ RSpec.describe Polyn::Serializers::Json do
   describe "#serialize" do
     it "serializes a Polyn::Event into JSON by calling #to_json on the event" do
       event = Polyn::Event.new(
-        id:   "123",
-        type: "test",
-        data: {
+        id:     "123",
+        source: "source",
+        type:   "test",
+        data:   {
           foo: "bar",
         },
       )
