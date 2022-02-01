@@ -82,11 +82,15 @@ class EmailService < Polyn::Service
   def send_update_email(context)
     user = User.where(context.params.user_id)
     UserMailer.with(user: user).update_email.deliver_now
+
+    context.acknowledge
   end
   
   def send_welcome_email(context)
     user = User.where(context.params.user_id)
     UserMailer.with(user: user).welcome_email.deliver_now
+    
+    context.acknowledge
   end
 end
 ```
