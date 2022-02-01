@@ -31,7 +31,7 @@ RSpec.describe Polyn::Service do
     end
   end
 
-  let(:context) { double(Polyn::Context, topic: "test") }
+  let(:context) { instance_double(Polyn::Context, type: "test") }
 
   describe ":receive message" do
     it "should call the appropriate event" do
