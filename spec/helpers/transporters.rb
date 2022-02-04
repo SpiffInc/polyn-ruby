@@ -19,9 +19,8 @@
 
 RSpec.shared_examples "a transporter" do
   subject { described_class.spawn(transit, options) }
-
-  let(:ev) { Concurrent::Event.new }
   let(:transit) { double(Polyn::Transit) }
+  let(:ev) { Concurrent::Event.new }
 
   before :each do
     subject.connect!
@@ -35,7 +34,7 @@ RSpec.shared_examples "a transporter" do
 
     it "should publish the provided message to the subscribed topic" do
       expect(transit).to receive(:<<)
-        .with([:receive, instance_of(described_class::Message)]) do |_, message|
+        .with([:receive, instance_of(described_class::Envelope)]) do |_, message|
         message.acknowledge
         ev.set
       end

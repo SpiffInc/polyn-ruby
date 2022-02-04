@@ -2,6 +2,7 @@
 
 require "polyn"
 require "simplecov"
+require "timecop"
 
 RSpec.configure do |config|
   SimpleCov.start

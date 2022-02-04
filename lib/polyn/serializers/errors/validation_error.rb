@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -17,42 +15,17 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
+module Polyn
+  module Serializers
+    module Errors
+      ##
+      # ValidationError is raised when a serializer encounters a validation error.
+      class ValidationError < Polyn::Errors::Error
+        attr_reader :errors
 
-require_relative "../../../lib/polyn/validators/json_schema"
-
-RSpec.describe Polyn::Validators::JsonSchema do
-  let(:validator) do
-    Polyn::Validators::JsonSchema.new(
-      prefix: File.expand_path("../../fixtures", __dir__),
-      file:   true,
-    )
-  end
-
-  describe "#validate" do
-    context "when the data is valid" do
-      let(:data) do
-        {
-          "a" => 1,
-        "b"  => 30,
-        }
-      end
-
-      it "returns true" do
-        expect(validator.validate("calc.mult", data)).to eq([])
-      end
-    end
-
-    context "when the data is invalid" do
-      let(:data) do
-        {
-          "name" => "John Doe",
-          "age"  => "1",
-        }
-      end
-
-      it "returns false" do
-        expect(validator.validate("calc.mult", data)).to_not be_empty
+        def initialize(details)
+          super("Event validation failed with the following details '#{details.inspect}'")
+        end
       end
     end
   end

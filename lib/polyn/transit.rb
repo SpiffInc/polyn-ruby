@@ -22,10 +22,26 @@ module Polyn
   # Abstracts the transportation logic of Polyn.  Transit works with the configured
   # Transporter to send the message to the Event Bus.
   class Transit < Concurrent::Actor::RestartingContext
+    ##
+    # @private
+    class Wrapper
+      def initialize(actor)
+        @actor = actor
+      end
+
+      def publish(*args)
+        actor << [:publish, *args]
+      end
+
+      private
+
+      attr_reader :actor
+    end
+
     include SemanticLogger::Loggable
 
     def self.spawn(*args)
-      super(:transit, *args)
+      Wrapper.new(super(:transit, *args))
     end
 
     ##
@@ -38,7 +54,7 @@ module Polyn
       configure_transporter(options.fetch(:transporter, :internal))
 
       @service_manager = service_manager
-      @serializer      = Serializers.for(:json).new
+      @serializer      = Serializers.for(options.fetch(:serializer))
       @origin          = options.fetch(:origin)
 
       logger.debug("serializer set to '#{serializer.class.name}'")
@@ -87,30 +103,27 @@ module Polyn
       })
     end
 
-    def message_for(topic, payload)
-      Message.new(
-        origin:  origin,
-        topic:   topic,
-        payload: payload,
-      )
+    ##
+    # Publishes the event to the configured transporter.
+    #
+    # @param event [Polyn::Event] the event to publish
+    def publish(event)
+      logger.info("publishing to topic '#{event.type}'")
+
+      serialized = serializer.serialize(event)
+      transporter.publish!(event.type, serialized)
     end
 
-    def publish(topic, payload)
-      logger.info("publishing to topic '#{topic}'")
-      message = message_for(topic, payload)
-
-      serialized = serializer.serialize(message.for_transit)
-      transporter.publish!(topic, serialized)
-    end
-
-    def receive(message)
-      serializer.deserialize(message.data).tap do |deserialized|
-        logger.info("received message from topic '#{message.topic}'")
+    ##
+    # Receives an event from the trnasporter.
+    #
+    # @param envelope [Polyn::Transporters::Envelope] the envelope to receive
+    def receive(envelope)
+      serializer.deserialize(envelope.event).tap do |event|
+        logger.info("received message from topic '#{envelope.type}'")
         context = Context.new(
-          message: message,
-          raw:     Utils::Hash.deep_symbolize_keys(
-            Utils::Hash.deep_snake_case_keys(deserialized),
-          ),
+          event:    event,
+          envelope: envelope,
         )
 
         service_manager << [:receive, context]

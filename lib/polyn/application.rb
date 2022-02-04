@@ -48,11 +48,11 @@ module Polyn
     def initialize(options)
       super()
       logger.info "initializing"
-      @name     = options.fetch(:name)
-      @hostname = Socket.gethostname
-      @pid      = Process.pid
+      @name          = options.fetch(:name)
+      @source_prefix = options.fetch(:source_prefix)
+      @hostname      = Socket.gethostname
+      @pid           = Process.pid
 
-      configure_validator(options.fetch(:validator))
       transit = options.fetch(:transit, {})
 
       transit.merge!({
@@ -60,7 +60,7 @@ module Polyn
       })
 
       logger.debug("starting service manager")
-      @service_manager = ServiceManager.spawn(options.fetch(:services, []))
+      @service_manager = ServiceManager.spawn(options.fetch(:service_manager, { services: [] }))
       logger.debug("starting transit")
       @transit         = Transit.spawn(service_manager, transit)
     end
@@ -68,15 +68,16 @@ module Polyn
     ##
     # Publishes a message to the transit `Actor`
     #
-    # @param topic [String] the topic to publish to
+    # @param type [String] the event type to publish
     # @param payload [Hash] the message to publish
-    def publish(topic, payload)
-      payload = Utils::Hash.deep_camelize_keys(payload).freeze
-      errors  = validator.validate(topic, payload)
+    def publish(type, payload)
+      event = Event.new({
+        type:   type,
+        source: "#{source_prefix}.#{name}",
+        data:   payload,
+      })
 
-      raise Errors::PayloadValidationError, errors unless errors.empty?
-
-      transit << [:publish, topic, payload]
+      transit.publish(event)
     end
 
     ##
@@ -98,14 +99,10 @@ module Polyn
 
     private
 
-    attr_reader :service_manager, :container, :log_options, :transit, :validator, :hostname, :pid
+    attr_reader :service_manager, :container, :log_options, :transit, :hostname, :pid, :source_prefix
 
     def origin
       "#{name}/#{hostname}/#{pid}"
-    end
-
-    def configure_validator(validator)
-      @validator = Validators.for(validator)
     end
   end
 end

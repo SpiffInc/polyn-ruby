@@ -18,55 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "spec_helper"
-require_relative "../../lib/polyn/validators/json_schema"
 
 RSpec.describe Polyn::Application do
-  let(:service_manager) { double(Polyn::ServiceManager) }
-  let(:transit) { double(Polyn::Transit) }
-
   subject do
     described_class.new(
-      name:      "MyApp",
-      validator: Polyn::Validators::JsonSchema.new(
-        prefix: File.expand_path("../fixtures", __dir__),
-        file:   true,
-      ),
+      name:          "my_app",
+      source_prefix: "com.test",
     )
   end
 
-  describe "#initialize" do
-    it "requires and sets the name" do
-      expect(subject.name).to eq("MyApp")
-    end
-
-    it "sets up the service manager" do
-      expect(Polyn::ServiceManager).to receive(:spawn).and_return(service_manager)
-
-      subject
-    end
-
-    it "sets up the transit" do
-      expect(Polyn::Transit).to receive(:spawn).and_return(service_manager)
-
-      subject
-    end
-  end
-
   describe "#publish" do
-    context "invalid payload" do
-      it "raises Polyn::Errors::ValidationError" do
-        expect do
-          subject.publish("calc.mult", { wrong: "payload" })
-        end.to raise_error(Polyn::Errors::PayloadValidationError)
+    it "publishes an event to the transit" do
+      expect_any_instance_of(Polyn::Transit::Wrapper).to receive(:publish).with(instance_of(Polyn::Event)) do |_, event|
+        expect(event.source).to eq("com.test.my_app")
+        expect(event.type).to eq("calc.mult")
+        expect(event.data).to eq({ a: 1, b: 2 })
       end
-    end
 
-    context "snake cased keys" do
-      it "camel cases the keys before validation" do
-        expect do
-          subject.publish("calc.mult", { a: 1, b: 2 })
-        end.to_not raise_exception
-      end
+      subject.publish("calc.mult", { a: 1, b: 2 })
     end
   end
 end

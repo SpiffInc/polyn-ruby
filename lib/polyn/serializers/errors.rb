@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -17,36 +15,4 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
-
-RSpec.describe Polyn::Message do
-  let(:service) { double("Parent") }
-  let(:parent) { double(Polyn::Service) }
-  subject do
-    Polyn::Message.new(
-      topic:   "test.topic",
-      payload: { test: :payload },
-      origin:  "test.host",
-      parent:  parent,
-      service: service,
-    )
-  end
-
-  describe "#for_transit" do
-    let(:transit_message) { subject.for_transit }
-    it "formats the message for transit" do
-      expect(transit_message).to include({
-        topic:   "test.topic",
-        origin:  "test.host",
-        client:  {
-          type:    "ruby",
-          version: Polyn::VERSION,
-        },
-        trace:   [],
-        payload: {
-          test: :payload,
-        },
-      })
-    end
-  end
-end
+require_relative "./errors/validation_error"

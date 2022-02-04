@@ -18,16 +18,89 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "json"
+require "open-uri"
+require "json_schemer"
 
 module Polyn
   module Serializers
+    ##
+    # Handles serializing and deserializing data to and from JSON.
     class Json < Base
-      def serialize(data)
-        JSON.dump(data)
+      DRAFT_URL   = "http://json-schema.org/draft-07/schema#"
+      SCHEMA_URL  = "https://raw.githubusercontent.com/cloudevents/spec/v1.0.1/spec.json"
+      FILE_SCHEME = "file"
+
+      REQUIRED_PROPERTIES = %w[
+        id
+        type
+        source
+        specversion
+        datacontenttype
+        time
+        data
+      ].freeze
+
+      def initialize(options = nil)
+        super
+        @schema_prefix     = options.fetch(:schema_prefix)
+        @cached_validators = {}
+      end
+
+      def serialize(event)
+        event.datacontenttype = "application/json"
+
+        validate_event(event)
+
+        JSON.dump(event.to_h)
       end
 
       def deserialize(data)
-        JSON.parse(data)
+        hash  = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
+        event = Event.new(hash)
+
+        validate_event(event)
+
+        event
+      end
+
+      private
+
+      attr_reader :cached_validators, :schema_prefix
+
+      def validate_event(event)
+        puts schema_template(event)
+        schema = cached_validators[event.type] ||= JSONSchemer.schema(
+          schema_template(event),
+          ref_resolver: proc { |ref| resolve_ref(ref) },
+        )
+
+        validation = schema.validate(event.to_h)
+
+        raise Errors::ValidationError, validation.to_a if validation.any?
+      end
+
+      def schema_template(event)
+        {
+          "$schema"    => DRAFT_URL,
+          "$id"        => SCHEMA_URL,
+          "properties" => {
+            "datacontenttype" => {
+              "type" => "string",
+            },
+            "data"            => {
+              "$ref" => "#{schema_prefix}/#{event.type}.json",
+            },
+          },
+          "required"   => REQUIRED_PROPERTIES
+        }
+      end
+
+      def resolve_ref(ref)
+        if ref.scheme == FILE_SCHEME
+          JSON.parse(File.read(ref.path))
+        else
+          JSON.parse(Net::HTTP.get(ref))
+        end
       end
     end
   end

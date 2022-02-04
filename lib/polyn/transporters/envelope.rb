@@ -18,16 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 module Polyn
-  module Validators
+  module Transporters
     ##
-    # Validator base class.
-    #
-    # @abstract
-    class Base
+    # Represents the raw, unserialized message from the transporter. Each transporter should subclass this
+    # class and create its own message class.
+    class Envelope
+      attr_accessor :event, :type
+
       ##
-      # @param _event [String] The event name.
-      # @param _payload [Hash] the payload to validate.
-      def validate(_event, _payload)
+      # @param type [String] the the type of event received
+      # @param event [String] the raw data received from the transporter
+      def initialize(type, event)
+        @type  = type
+        @event = event
+      end
+
+      ##
+      # Subclasses should implement this method to acknowledge that the message has been received.
+      def acknowledge
         raise NotImplementedError
       end
     end

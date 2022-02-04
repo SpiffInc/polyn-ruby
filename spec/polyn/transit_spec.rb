@@ -21,52 +21,88 @@ require "spec_helper"
 
 RSpec.describe Polyn::Transit do
   subject do
-    Polyn::Transit.spawn(service_manager, origin: "origin", transporter: :internal)
+    Polyn::Transit.spawn(
+      service_manager,
+      origin:      "origin",
+      transporter: { type: :internal },
+      serializer:  { type:          :json,
+                     schema_prefix: "file://#{File.expand_path('../fixtures', __dir__)}" },
+    )
   end
 
+  let(:service_manager) { Polyn::ServiceManager.spawn(services: []) }
 
   let(:ev) { Concurrent::Event.new }
-  let(:message) { instance_double(Polyn::Message, for_transit: message_for_transit) }
-  let(:service_manager) { instance_double(Polyn::ServiceManager) }
-  let(:transporter) { instance_double(Polyn::Transporters::Base::Wrapper, connect!: true) }
-  let(:serializer) { instance_double(Polyn::Serializers::Json) }
-  let(:message_for_transit) { double("MessageForTransit") }
-  let(:serialized_message) { double("SerializedMessage") }
-
-
-
-  before :each do
-    allow(Polyn::Message).to receive(:new).and_return(message)
-    allow(Polyn::Transporters::Internal).to receive(:spawn).and_return(transporter)
-    allow(Polyn::Serializers::Json).to receive(:new).and_return(serializer)
-    allow(service_manager).to receive(:ask!).and_return([])
-  end
-
   describe "#publish" do
-
+    let(:event) do
+      Polyn::Event.new({
+        source: "com.test.my_app",
+        type:   "calc.mult",
+        data:   { a: 1, b: 2 },
+      })
+    end
 
     it "should publish the serialized data" do
-      expect(serializer).to receive(:serialize).with(message.for_transit).and_return(serialized_message)
-      expect(transporter).to receive(:publish!).with("foo", serialized_message) { ev.set }
+      expect_any_instance_of(Polyn::Transporters::Internal::Wrapper).to receive(:publish!).with(
+        "calc.mult", instance_of(String)
+      ) do |_, _, serialized|
+        expect(JSON.parse(serialized)).to eq({
+          "type"            => "calc.mult",
+          "data"            => { "a" => 1, "b" => 2 },
+          "id"              => event.id,
+          "source"          => "com.test.my_app",
+          "specversion"     => "1.0",
+          "time"            => event.time,
+          "datacontenttype" => "application/json",
+        })
 
-      subject << [:publish, "foo", message]
+        ev.set
+      end
+
+      subject.publish(event)
 
       ev.wait(1)
     end
   end
 
   describe ":receive message" do
-    let(:context) { instance_double(Polyn::Context) }
-    let(:payload) { { bar: "baz" } }
-    let(:json) { payload.to_json }
-    let(:message) { Polyn::Transporters::Message.new("test", json) }
+    let(:event_json) do
+      {
+        source:          "com.test",
+        type:            "calc.mult",
+        data:            {
+          a: 1,
+          b: 2,
+        },
+        time:            Time.now.utc.iso8601,
+        datacontenttype: "application/json",
+      }.to_json
+    end
+
+    let(:envelope) do
+      Polyn::Transporters::Internal::Envelope.new("calc.mult", event_json)
+    end
+
+    subject do
+      Polyn::Transit.spawn(
+        service_manager,
+        origin:      "origin",
+        transporter: { type: :internal },
+        serializer:  { type:          :json,
+                       schema_prefix: "file://#{File.expand_path('../fixtures', __dir__)}" },
+      ).instance_variable_get(:@actor)
+    end
 
     it "should send the deserializes the message and sends the context to the service_manager" do
-      expect(serializer).to receive(:deserialize).with(json).and_return(payload)
-      expect(Polyn::Context).to receive(:new).with(**{ message: message, raw: payload }).and_return(context)
-      expect(service_manager).to receive(:<<).with([:receive, context]) { ev.set }
+      expect(service_manager).to receive(:<<).with([:receive,
+                                                    instance_of(Polyn::Context)]) do |_, context|
+        expect(context.envelope).to eq(envelope)
+        expect(context.event).to be_an_instance_of(Polyn::Event)
 
-      subject << [:receive, message]
+        ev.set
+      end
+
+      subject << [:receive, envelope]
 
       ev.wait(1)
     end

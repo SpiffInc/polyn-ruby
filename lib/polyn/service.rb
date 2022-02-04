@@ -70,7 +70,7 @@ module Polyn
       #
       # @param context [Polyn::Context] The context of the event.
       def receive(context)
-        topic = context.topic
+        topic = context.type
         return unless events[topic]
 
         logger.debug("receiving event '#{topic}'")
