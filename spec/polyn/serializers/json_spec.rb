@@ -34,8 +34,11 @@ RSpec.describe Polyn::Serializers::Json do
           id:              SecureRandom.uuid,
           source:          "com.test.service",
           type:            "calc.mult",
-          # datacontenttype: "application/json",
-          data: {}
+          datacontenttype: "application/json",
+          data: {
+            a: 1,
+            b: 2,
+          }
         )
 
         puts event.to_h

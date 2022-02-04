@@ -26,9 +26,19 @@ module Polyn
     ##
     # Handles serializing and deserializing data to and from JSON.
     class Json < Base
-      SCHEMA_URL = {
-        "$ref" => "https://raw.githubusercontent.com/cloudevents/spec/v1.0.1/spec.json",
-      }.freeze
+      DRAFT_URL   = "http://json-schema.org/draft-07/schema#"
+      SCHEMA_URL  = "https://raw.githubusercontent.com/cloudevents/spec/v1.0.1/spec.json"
+      FILE_SCHEME = "file"
+
+      REQUIRED_PROPERTIES = %w[
+        id
+        type
+        source
+        specversion
+        datacontenttype
+        time
+        data
+      ].freeze
 
       def initialize(options = nil)
         super
@@ -71,24 +81,25 @@ module Polyn
 
       def schema_template(event)
         {
-          "$schema"    => "http://json-schema.org/draft-07/schema#",
-          "$id"        => "https://raw.githubusercontent.com/cloudevents/spec/v1.0.1/spec.json",
+          "$schema"    => DRAFT_URL,
+          "$id"        => SCHEMA_URL,
           "properties" => {
-            "datacontenttype" => "string",
+            "datacontenttype" => {
+              "type" => "string",
+            },
             "data"            => {
               "$ref" => "#{schema_prefix}/#{event.type}.json",
             },
           },
-          "required"   => %w[id source specversion type datacontenttype],
+          "required"   => REQUIRED_PROPERTIES
         }
       end
 
       def resolve_ref(ref)
-        if ref =~ %r{^file://(.*)}i
-          File.read(ref.gsub("file://", ""))
+        if ref.scheme == FILE_SCHEME
+          JSON.parse(File.read(ref.path))
         else
-          puts "\n\nresolving remote #{ref}"
-          Net::HTTP.get(ref)
+          JSON.parse(Net::HTTP.get(ref))
         end
       end
     end
