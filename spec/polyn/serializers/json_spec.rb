@@ -35,15 +35,31 @@ RSpec.describe Polyn::Serializers::Json do
           source:          "com.test.service",
           type:            "calc.mult",
           datacontenttype: "application/json",
-          data: {
+          data:            {
             a: 1,
             b: 2,
-          }
+          },
         )
 
         puts event.to_h
 
         expect(serializer.serialize(event)).to eq(event.to_h.to_json)
+      end
+    end
+
+    context "invalid event" do
+      it "raises Polyn::Serializers::Errors::ValidationError" do
+        event = Polyn::Event.new(
+          id:              SecureRandom.uuid,
+          source:          "com.test.service",
+          type:            "calc.mult",
+          datacontenttype: "application/json",
+          data:            {},
+        )
+
+        expect do
+          serializer.serialize(event)
+        end.to raise_error(Polyn::Serializers::Errors::ValidationError)
       end
     end
   end
@@ -53,23 +69,40 @@ RSpec.describe Polyn::Serializers::Json do
       it "deserializes a JSON string into a Polyn::Event" do
         event = serializer.deserialize({
           time:   time = Time.now.utc.iso8601,
-          type:   "test.event",
-          source: "/test/service",
+          type:   "calc.mult",
+          source: "com.test.service",
           id:     id   = SecureRandom.uuid,
           data:   {
-            foo: "bar",
+            a: 1,
+            b: 2
           },
         }.to_json)
 
         expect(event).to be_an_instance_of(Polyn::Event)
         expect(event.id).to eq(id)
         expect(event.time).to eq(time)
-        expect(event.type).to eq("test.event")
-        expect(event.source).to eq("/test/service")
+        expect(event.type).to eq("calc.mult")
+        expect(event.source).to eq("com.test.service")
         expect(event.datacontenttype).to eq("application/json")
         expect(event.data).to eq({
-          foo: "bar",
+                                   a: 1,
+                                   b: 2,
         })
+      end
+    end
+
+    context "invalid event" do
+      it "raises Polyn::Serializers::Errors::ValidationError" do
+        expect do
+          serializer.deserialize({
+            time:   Time.now.utc.iso8601,
+            type:   "calc.mult",
+            source: "com.test.service",
+            id:      SecureRandom.uuid,
+            data:   {
+            },
+          }.to_json)
+        end.to raise_error(Polyn::Serializers::Errors::ValidationError)
       end
     end
   end
