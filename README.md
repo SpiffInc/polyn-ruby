@@ -54,19 +54,16 @@ If using pubsub as your transporter, you will also need to add the following to 
  ```ruby
  gem 'google-cloud-pubsub'
  ```
-If using JSON as your serializer, you will also need to add the following to your application's Gemfile:
+
+To use the JSON serializer, you will also need to add the following to your application's Gemfile:
 
  ```ruby
- gem 'json-schema'
+ gem 'json_schemer'
  ```
 
 And then execute:
 
     $ bundle install
-
-Or install it yourself as:
-
-    $ gem install polyn
 
 ## Usage
 
@@ -78,6 +75,7 @@ to one or more events.
 | Key | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `:name` | `String` | true | | The name of the application |
+ | `:transit`| `Hash` | true | | The transit configuration |
 
 ## Services
 

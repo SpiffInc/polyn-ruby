@@ -46,7 +46,10 @@ RSpec.describe "Pubsub Transporter with JSON Serializer" do
           options: @options,
         },
       },
-      serializer:      :json,
+      serializer:      {
+        type:          :json,
+        schema_prefix: "file://#{File.expand_path('../../../schemas', __dir__)}",
+      },
       service_manager: {
         services: [calc],
       },

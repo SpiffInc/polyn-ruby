@@ -20,11 +20,11 @@ module Polyn
     module Errors
       ##
       # ValidationError is raised when a serializer encounters a validation error.
-      class ValidationError < Errors::Error
+      class ValidationError < Polyn::Errors::Error
         attr_reader :errors
 
-        def initialize(error)
-          super("Event validation failed #{error}")
+        def initialize(details)
+          super("Event validation failed with the following details '#{details.inspect}'")
         end
       end
     end

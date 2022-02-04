@@ -23,9 +23,9 @@ source "https://rubygems.org"
 gemspec
 
 gem "google-cloud-pubsub"
-gem "json-schema"
 gem "rake", "~> 13.0"
 gem "rspec", "~> 3.0"
 gem "rubocop", "~> 1.7"
 gem "simplecov"
 gem "timecop"
+gem "json_schemer"

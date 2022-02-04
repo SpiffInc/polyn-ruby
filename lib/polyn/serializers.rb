@@ -31,13 +31,15 @@ module Polyn
     ##
     # Returns the serializer for the given type
     #
-    # @param type [Symbol] The type of serializer.
+    # @param type [Hash] The type of serializer.
     #
-    # @return [Class<Polyn::Serializer] The serializer class.
-    def self.for(type)
+    # @return [Polyn::Serializer] The serializer class.
+    def self.for(config)
+      type = config.fetch(:type)
+
       case type
       when :json
-        Json
+        Json.new(config)
       else
         raise ArgumentError, "Unknown serializer type: #{type}"
       end

@@ -63,21 +63,23 @@ module Polyn
         raise UnsupportedVersionError, "Unsupported version: '#{hash[:specversion]}'"
       end
 
-      @id          = hash.fetch(:id, SecureRandom.uuid)
-      @type        = hash.fetch(:type)
-      @source      = hash.fetch(:source)
-      @time        = hash.fetch(:time, Time.now.utc.iso8601)
-      @data        = hash.fetch(:data)
+      @id              = hash.fetch(:id, SecureRandom.uuid)
+      @type            = hash.fetch(:type)
+      @source          = hash.fetch(:source)
+      @time            = hash.fetch(:time, Time.now.utc.iso8601)
+      @data            = hash.fetch(:data)
+      @datacontenttype = hash[:datacontenttype]
     end
 
     def to_h
       {
-        specversion: specversion,
-        id:          id,
-        type:        type,
-        source:      source,
-        time:        time,
-        data:        data,
+        "specversion"     => specversion,
+        "id"              => id,
+        "type"            => type,
+        "source"          => source,
+        "time"            => time,
+        "data"            => Utils::Hash.deep_stringify_keys(data),
+        "datacontenttype" => datacontenttype,
       }
     end
   end

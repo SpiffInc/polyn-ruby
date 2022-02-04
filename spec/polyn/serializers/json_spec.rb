@@ -21,44 +21,53 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 RSpec.describe Polyn::Serializers::Json do
-  let(:serializer) { Polyn::Serializers::Json.new }
+  let(:serializer) do
+    Polyn::Serializers::Json.new(
+    schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
+  )
+  end
 
   describe "#serialize" do
-    it "serializes a Polyn::Event into JSON by calling #to_json on the event" do
-      event = Polyn::Event.new(
-        id:     "123",
-        source: "source",
-        type:   "test",
-        data:   {
-          foo: "bar",
-        },
-      )
+    context "valid event" do
+      it "serializes a Polyn::Event into JSON by calling #to_json on the event" do
+        event = Polyn::Event.new(
+          id:              SecureRandom.uuid,
+          source:          "com.test.service",
+          type:            "calc.mult",
+          # datacontenttype: "application/json",
+          data: {}
+        )
 
-      expect(serializer.serialize(event)).to eq(event.to_h.to_json)
+        puts event.to_h
+
+        expect(serializer.serialize(event)).to eq(event.to_h.to_json)
+      end
     end
   end
 
   describe "#deserialize" do
-    it "deserializes a JSON string into a Polyn::Event" do
-      event = serializer.deserialize({
-        time:   time = Time.now.utc.iso8601,
-        type:   "test.event",
-        source: "/test/service",
-        id:     id   = SecureRandom.uuid,
-        data:   {
-          foo: "bar",
-        },
-      }.to_json)
+    context "valid event" do
+      it "deserializes a JSON string into a Polyn::Event" do
+        event = serializer.deserialize({
+          time:   time = Time.now.utc.iso8601,
+          type:   "test.event",
+          source: "/test/service",
+          id:     id   = SecureRandom.uuid,
+          data:   {
+            foo: "bar",
+          },
+        }.to_json)
 
-      expect(event).to be_an_instance_of(Polyn::Event)
-      expect(event.id).to eq(id)
-      expect(event.time).to eq(time)
-      expect(event.type).to eq("test.event")
-      expect(event.source).to eq("/test/service")
-      expect(event.datacontenttype).to eq("application/json")
-      expect(event.data).to eq({
-        foo: "bar",
-      })
+        expect(event).to be_an_instance_of(Polyn::Event)
+        expect(event.id).to eq(id)
+        expect(event.time).to eq(time)
+        expect(event.type).to eq("test.event")
+        expect(event.source).to eq("/test/service")
+        expect(event.datacontenttype).to eq("application/json")
+        expect(event.data).to eq({
+          foo: "bar",
+        })
+      end
     end
   end
 end
