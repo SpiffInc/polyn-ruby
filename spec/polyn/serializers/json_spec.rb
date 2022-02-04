@@ -31,11 +31,10 @@ RSpec.describe Polyn::Serializers::Json do
     context "valid event" do
       it "serializes a Polyn::Event into JSON by calling #to_json on the event" do
         event = Polyn::Event.new(
-          id:              SecureRandom.uuid,
-          source:          "com.test.service",
-          type:            "calc.mult",
-          datacontenttype: "application/json",
-          data:            {
+          id:     SecureRandom.uuid,
+          source: "com.test.service",
+          type:   "calc.mult",
+          data:   {
             a: 1,
             b: 2,
           },
@@ -50,11 +49,10 @@ RSpec.describe Polyn::Serializers::Json do
     context "invalid event" do
       it "raises Polyn::Serializers::Errors::ValidationError" do
         event = Polyn::Event.new(
-          id:              SecureRandom.uuid,
-          source:          "com.test.service",
-          type:            "calc.mult",
-          datacontenttype: "application/json",
-          data:            {},
+          id:     SecureRandom.uuid,
+          source: "com.test.service",
+          type:   "calc.mult",
+          data:   {},
         )
 
         expect do
@@ -68,13 +66,14 @@ RSpec.describe Polyn::Serializers::Json do
     context "valid event" do
       it "deserializes a JSON string into a Polyn::Event" do
         event = serializer.deserialize({
-          time:   time = Time.now.utc.iso8601,
-          type:   "calc.mult",
-          source: "com.test.service",
-          id:     id   = SecureRandom.uuid,
-          data:   {
+          time:            time = Time.now.utc.iso8601,
+          type:            "calc.mult",
+          source:          "com.test.service",
+          id:              id   = SecureRandom.uuid,
+          datacontenttype: "application/json",
+          data:            {
             a: 1,
-            b: 2
+            b: 2,
           },
         }.to_json)
 
@@ -85,8 +84,8 @@ RSpec.describe Polyn::Serializers::Json do
         expect(event.source).to eq("com.test.service")
         expect(event.datacontenttype).to eq("application/json")
         expect(event.data).to eq({
-                                   a: 1,
-                                   b: 2,
+          a: 1,
+          b: 2,
         })
       end
     end
@@ -98,7 +97,7 @@ RSpec.describe Polyn::Serializers::Json do
             time:   Time.now.utc.iso8601,
             type:   "calc.mult",
             source: "com.test.service",
-            id:      SecureRandom.uuid,
+            id:     SecureRandom.uuid,
             data:   {
             },
           }.to_json)

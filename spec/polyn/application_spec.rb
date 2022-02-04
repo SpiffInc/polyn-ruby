@@ -22,20 +22,20 @@ require "spec_helper"
 RSpec.describe Polyn::Application do
   subject do
     described_class.new(
-      name: "my_app",
-      source_prefix: "com.test"
+      name:          "my_app",
+      source_prefix: "com.test",
     )
   end
 
   describe "#publish" do
     it "publishes an event to the transit" do
       expect_any_instance_of(Polyn::Transit::Wrapper).to receive(:publish).with(instance_of(Polyn::Event)) do |_, event|
-        expect(event.source).to eq("/my_app")
-        expect(event.type).to eq("test")
-        expect(event.data).to eq(foo: "bar")
+        expect(event.source).to eq("com.test.my_app")
+        expect(event.type).to eq("calc.mult")
+        expect(event.data).to eq({ a: 1, b: 2 })
       end
 
-      subject.publish("test", { foo: "bar" })
+      subject.publish("calc.mult", { a: 1, b: 2 })
     end
   end
 end

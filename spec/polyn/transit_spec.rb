@@ -21,8 +21,13 @@ require "spec_helper"
 
 RSpec.describe Polyn::Transit do
   subject do
-    Polyn::Transit.spawn(service_manager, origin: "origin",
-transporter: :internal)
+    Polyn::Transit.spawn(
+      service_manager,
+      origin:      "origin",
+      transporter: { type: :internal },
+      serializer:  { type:          :json,
+                     schema_prefix: "file://#{File.expand_path('../fixtures', __dir__)}" },
+    )
   end
 
   let(:service_manager) { Polyn::ServiceManager.spawn(services: []) }
@@ -31,23 +36,24 @@ transporter: :internal)
   describe "#publish" do
     let(:event) do
       Polyn::Event.new({
-        source: "/my_app",
-        type:   "test",
-        data:   { foo: "bar" },
+        source: "com.test.my_app",
+        type:   "calc.mult",
+        data:   { a: 1, b: 2 },
       })
     end
 
     it "should publish the serialized data" do
       expect_any_instance_of(Polyn::Transporters::Internal::Wrapper).to receive(:publish!).with(
-        "test", instance_of(String)
+        "calc.mult", instance_of(String)
       ) do |_, _, serialized|
         expect(JSON.parse(serialized)).to eq({
-          "type"        => "test",
-          "data"        => { "foo" => "bar" },
-          "id"          => event.id,
-          "source"      => "/my_app",
-          "specversion" => "1.0",
-          "time"        => event.time,
+          "type"            => "calc.mult",
+          "data"            => { "a" => 1, "b" => 2 },
+          "id"              => event.id,
+          "source"          => "com.test.my_app",
+          "specversion"     => "1.0",
+          "time"            => event.time,
+          "datacontenttype" => "application/json",
         })
 
         ev.set
@@ -62,22 +68,29 @@ transporter: :internal)
   describe ":receive message" do
     let(:event_json) do
       {
-        source: "/my_app",
-        type:   "test",
-        data:   {
-          foo: "bar",
+        source:          "com.test",
+        type:            "calc.mult",
+        data:            {
+          a: 1,
+          b: 2,
         },
-        time:   Time.now.utc.iso8601,
+        time:            Time.now.utc.iso8601,
+        datacontenttype: "application/json",
       }.to_json
     end
 
     let(:envelope) do
-      Polyn::Transporters::Internal::Envelope.new("test", event_json)
+      Polyn::Transporters::Internal::Envelope.new("calc.mult", event_json)
     end
 
     subject do
-      Polyn::Transit.spawn(service_manager, origin: "origin",
-                                    transporter: :internal).instance_variable_get(:@actor)
+      Polyn::Transit.spawn(
+        service_manager,
+        origin:      "origin",
+        transporter: { type: :internal },
+        serializer:  { type:          :json,
+                       schema_prefix: "file://#{File.expand_path('../fixtures', __dir__)}" },
+      ).instance_variable_get(:@actor)
     end
 
     it "should send the deserializes the message and sends the context to the service_manager" do
