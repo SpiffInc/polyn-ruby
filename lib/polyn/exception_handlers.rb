@@ -17,19 +17,18 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require_relative "base"
+require_relative "exception_handlers/internal"
 
 module Polyn
+  ##
+  # Exception handlers for Polyn.
   module ExceptionHandlers
-    ##
-    # A basic exception handler that simply logs the exception to the console.
-    class Internal < Base
-      def handle_exception(_application, actor, exception)
-        actor.logger.error(
-          exception.message,
-          message:   exception.message,
-          backtrace: exception.backtrace,
-        )
+    def self.for(options)
+      type = options.fetch(:type)
+
+      case type
+      when :internal
+        Internal.new(options)
       end
     end
   end

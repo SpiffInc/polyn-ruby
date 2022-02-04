@@ -43,6 +43,10 @@ module Polyn
       attr_accessor :pid
 
       ##
+      # Exception handler
+      attr_accessor :exception_handler
+
+      ##
       # @private
       def spawn(options)
         super(:supervisor, options)
@@ -64,10 +68,15 @@ module Polyn
     def initialize(options)
       super()
       logger.info "initializing"
-      self.class.name             = options.fetch(:name)
-      self.class.source_prefix    = options.fetch(:source_prefix)
-      self.class.hostname         = Socket.gethostname
-      self.class.pid              = Process.pid
+
+      self.class.exception_handler = ExceptionHandlers.for(
+        options.fetch(:exception_handler, { type: :internal }),
+      )
+
+      self.class.name              = options.fetch(:name)
+      self.class.source_prefix     = options.fetch(:source_prefix)
+      self.class.hostname          = Socket.gethostname
+      self.class.pid               = Process.pid
 
       transit = options.fetch(:transit, {})
 
@@ -79,6 +88,9 @@ module Polyn
       @service_manager = ServiceManager.spawn(options.fetch(:service_manager, { services: [] }))
       logger.debug("starting transit")
       @transit         = Transit.spawn(service_manager, transit)
+    rescue StandardError => e
+      Application.exception_handler&.handle_exception(self, self, e)
+      raise e
     end
 
     ##
