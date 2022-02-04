@@ -47,16 +47,16 @@ module Polyn
       end
 
       def serialize(event)
+        event.datacontenttype = "application/json"
+
         validate_event(event)
 
         JSON.dump(event.to_h)
       end
 
       def deserialize(data)
-        hash = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
-
-        event                 = Event.new(hash)
-        event.datacontenttype = "application/json"
+        hash  = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
+        event = Event.new(hash)
 
         validate_event(event)
 
@@ -76,7 +76,7 @@ module Polyn
 
         validation = schema.validate(event.to_h)
 
-        raise Errors::ValidationError, validation.to_a.first["details"] if validation.any?
+        raise Errors::ValidationError, validation.to_a if validation.any?
       end
 
       def schema_template(event)

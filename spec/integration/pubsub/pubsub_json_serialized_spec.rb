@@ -40,15 +40,16 @@ RSpec.describe "Pubsub Transporter with JSON Serializer" do
   subject do
     Polyn.start(
       name:            "test",
+      source_prefix:   "com.test",
       transit:         {
         transporter: {
           type:    :pubsub,
           options: @options,
         },
-      },
-      serializer:      {
-        type:          :json,
-        schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
+        serializer:      {
+          type:          :json,
+          schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
+        },
       },
       service_manager: {
         services: [calc],

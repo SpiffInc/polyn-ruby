@@ -40,8 +40,16 @@ RSpec.describe "Internal Transporter with JSON Serializer" do
   subject do
     Polyn.start(
       name:            "test",
-      transporter:     :internal,
-      serializer:      :json,
+      source_prefix:   "com.test",
+      transit:         {
+        transporter: {
+          type: :internal,
+        },
+        serializer:  {
+          type:          :json,
+          schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
+        },
+      },
       service_manager: {
         services: [calc],
       },

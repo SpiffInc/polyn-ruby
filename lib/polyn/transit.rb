@@ -54,7 +54,7 @@ module Polyn
       configure_transporter(options.fetch(:transporter, :internal))
 
       @service_manager = service_manager
-      @serializer      = Serializers.for(:json).new
+      @serializer      = Serializers.for(options.fetch(:serializer))
       @origin          = options.fetch(:origin)
 
       logger.debug("serializer set to '#{serializer.class.name}'")

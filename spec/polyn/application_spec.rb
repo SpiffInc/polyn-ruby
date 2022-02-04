@@ -23,6 +23,7 @@ RSpec.describe Polyn::Application do
   subject do
     described_class.new(
       name: "my_app",
+      source_prefix: "com.test"
     )
   end
 

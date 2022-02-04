@@ -48,9 +48,10 @@ module Polyn
     def initialize(options)
       super()
       logger.info "initializing"
-      @name     = options.fetch(:name)
-      @hostname = Socket.gethostname
-      @pid      = Process.pid
+      @name          = options.fetch(:name)
+      @source_prefix = options.fetch(:source_prefix)
+      @hostname      = Socket.gethostname
+      @pid           = Process.pid
 
       transit = options.fetch(:transit, {})
 
@@ -72,7 +73,7 @@ module Polyn
     def publish(type, payload)
       event = Event.new({
         type:   type,
-        source: "/#{name}",
+        source: "#{source_prefix}.#{name}",
         data:   payload,
       })
 
@@ -98,7 +99,7 @@ module Polyn
 
     private
 
-    attr_reader :service_manager, :container, :log_options, :transit, :hostname, :pid
+    attr_reader :service_manager, :container, :log_options, :transit, :hostname, :pid, :source_prefix
 
     def origin
       "#{name}/#{hostname}/#{pid}"
