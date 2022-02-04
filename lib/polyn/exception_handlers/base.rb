@@ -20,7 +20,7 @@
 module Polyn
   module ExceptionHandlers
     ##
-    # Exception handlers are used to handle exceptions that occur wihthin a service.
+    # Exception handlers are used to handle exceptions that occur within a service.
     class Base
       def initialize(options = {})
         @options = options
