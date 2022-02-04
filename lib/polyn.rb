@@ -29,6 +29,7 @@ require_relative "polyn/utils"
 require_relative "polyn/serializers"
 require_relative "polyn/context"
 require_relative "polyn/event"
+require_relative "polyn/exception_handlers"
 
 ##
 # Polyn is a Reactive service framework.
