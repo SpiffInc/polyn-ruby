@@ -29,7 +29,7 @@ module Polyn
       ##
       # This method is called when an exception occurs within a service that is not related to
       # receiving or publishing events.
-      def handle_exception(_exception)
+      def handle_exception(_actor, _exception, _level = :error)
         raise NotImplementedError,
           "You must implement the handle_exception method in your exception handler."
       end
@@ -37,7 +37,7 @@ module Polyn
       ##
       # This method is called when an exception occurs within a service that is related to receiving
       # events.
-      def handle_receive_event_exception(_exception)
+      def handle_receive_event_exception(_actor, _event, _exception)
         raise NotImplementedError,
           "You must implement the handle_receive_event_exception method in your exception handler."
       end
@@ -45,7 +45,7 @@ module Polyn
       ##
       # This method is called when an exception occurs within a service that is related to publishing
       # events.
-      def handle_publish_event_exception(_exception)
+      def handle_publish_event_exception(_actor, _event, _exception)
         raise NotImplementedError,
           "You must implement the handle_publish_event_exception method in your exception handler."
       end

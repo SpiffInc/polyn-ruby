@@ -47,6 +47,10 @@ module Polyn
       attr_accessor :exception_handler
 
       ##
+      # The application instance
+      attr_accessor :instance
+
+      ##
       # @private
       def spawn(options)
         super(:supervisor, options)
@@ -77,6 +81,7 @@ module Polyn
       self.class.source_prefix     = options.fetch(:source_prefix)
       self.class.hostname          = Socket.gethostname
       self.class.pid               = Process.pid
+      self.class.instance          = self
 
       transit = options.fetch(:transit, {})
 
@@ -89,7 +94,7 @@ module Polyn
       logger.debug("starting transit")
       @transit         = Transit.spawn(service_manager, transit)
     rescue StandardError => e
-      Application.exception_handler&.handle_exception(self, self, e)
+      Application.exception_handler&.handle_exception(self, e, :fatal)
       raise e
     end
 
@@ -114,8 +119,10 @@ module Polyn
       case msg
       when :publish
         publish(*args)
+      when :reset
+        true
       else
-        raise ArgumentError, "unknown message: #{msg.inspect}"
+        pass
       end
     end
 

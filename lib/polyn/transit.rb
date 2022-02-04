@@ -73,6 +73,8 @@ module Polyn
         publish(*args)
       when :receive
         receive(*args)
+      when :reset
+        transporter.disconnect!
       else
         pass
       end
@@ -112,6 +114,13 @@ module Polyn
 
       serialized = serializer.serialize(event)
       transporter.publish!(event.type, serialized)
+    rescue StandardError => e
+      Application.exception_handler.handle_publish_event_exception(
+        self,
+        event,
+        e,
+      )
+      raise e
     end
 
     ##
@@ -128,6 +137,13 @@ module Polyn
 
         service_manager << [:receive, context]
       end
+    rescue StandardError => e
+      Application.exception_handler.handle_receive_event_exception(
+        self,
+        envelope,
+        e,
+      )
+      raise e
     end
 
     def configure_transporter(options)

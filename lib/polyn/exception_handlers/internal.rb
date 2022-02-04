@@ -24,11 +24,31 @@ module Polyn
     ##
     # A basic exception handler that simply logs the exception to the console.
     class Internal < Base
-      def handle_exception(_application, actor, exception)
-        actor.logger.error(
+      def handle_exception(actor, exception, level = :error)
+        actor.logger.send(
+          level,
           exception.message,
           message:   exception.message,
           backtrace: exception.backtrace,
+          actor:     actor.core.path,
+        )
+      end
+
+      def handle_publish_event_exception(actor, event, exception)
+        actor.logger.error(
+          message:   exception.message,
+          backtrace: exception.backtrace,
+          actor:     actor.core.path,
+          event:     event.to_h,
+        )
+      end
+
+      def handle_receive_event_exception(actor, event, exception)
+        actor.logger.error(
+          message:   exception.message,
+          backtrace: exception.backtrace,
+          actor:     actor.core.path,
+          event:     event.to_h,
         )
       end
     end
