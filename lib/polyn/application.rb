@@ -25,21 +25,37 @@ module Polyn
   # A Polyn Application. Only a single instance of this class should be created per
   # process.
   class Application < Concurrent::Actor::RestartingContext
+    class << self
+      ##
+      # The application name
+      attr_accessor :name
+
+      ##
+      # The application source prefix
+      attr_accessor :source_prefix
+
+      ##
+      # The application hostname
+      attr_accessor :hostname
+
+      ##
+      # The application pid
+      attr_accessor :pid
+
+      ##
+      # @private
+      def spawn(options)
+        super(:supervisor, options)
+      end
+
+      ##
+      # @private
+      def self.shutdown
+        logger.info("received 'SIGINT', shutting down...")
+      end
+    end
+
     include SemanticLogger::Loggable
-
-    ##
-    # @return [String] The name of the application.
-    attr_reader :name
-
-    ##
-    # @private
-    def self.spawn(options)
-      super(:supervisor, options)
-    end
-
-    def self.shutdown
-      logger.info("received 'SIGINT', shutting down...")
-    end
 
     ##
     # @param options [Hash] Polyn options.
@@ -48,10 +64,10 @@ module Polyn
     def initialize(options)
       super()
       logger.info "initializing"
-      @name          = options.fetch(:name)
-      @source_prefix = options.fetch(:source_prefix)
-      @hostname      = Socket.gethostname
-      @pid           = Process.pid
+      self.class.name             = options.fetch(:name)
+      self.class.source_prefix    = options.fetch(:source_prefix)
+      self.class.hostname         = Socket.gethostname
+      self.class.pid              = Process.pid
 
       transit = options.fetch(:transit, {})
 
@@ -91,6 +107,10 @@ module Polyn
       end
     end
 
+    def name
+      self.class.name
+    end
+
     ##
     # @private
     def default_executor
@@ -99,7 +119,20 @@ module Polyn
 
     private
 
-    attr_reader :service_manager, :container, :log_options, :transit, :hostname, :pid, :source_prefix
+    attr_reader :service_manager, :container, :log_options, :transit, :hostname, :pid,
+      :source_prefix
+
+    def source_prefix
+      self.class.source_prefix
+    end
+
+    def pid
+      self.class.pid
+    end
+
+    def hostname
+      self.class.hostname
+    end
 
     def origin
       "#{name}/#{hostname}/#{pid}"
