@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require_relative "serializers/base"
-require_relative "serializers/json"
 require_relative "serializers/errors"
 
 module Polyn
@@ -39,6 +38,7 @@ module Polyn
 
       case type
       when :json
+        require "polyn/serializers/json"
         Json.new(config)
       else
         raise ArgumentError, "Unknown serializer type: #{type}"
