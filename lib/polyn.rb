@@ -54,18 +54,19 @@ module Polyn
   end
 
   def self.configure_logger(logger)
-    if logger == $stdout
+    case logger
+    when $stdout
       SemanticLogger.add_appender(io: $stdout, formatter: :color)
       SemanticLogger.default_level = :trace
-    elsif logger.is_a?(Hash)
+      Concurrent.global_logger = Utils::SemanticConcurrentLogger.new
+    when Hash
       SemanticLogger.add_appender(logger)
       SemanticLogger.default_level = logger[:level] || :trace
+      Concurrent.global_logger = Utils::SemanticConcurrentLogger.new
+    when SemanticLogger::Logger
+      Concurrent.global_logger = Utils::SemanticConcurrentLogger.new
     else
       Concurrent.global_logger = Utils::GenericConcurrentLoggger.new(logger)
-      return
     end
-
-
-    Concurrent.global_logger = Utils::SemanticConcurrentLogger.new
   end
 end
