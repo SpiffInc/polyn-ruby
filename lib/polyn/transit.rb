@@ -25,12 +25,20 @@ module Polyn
     ##
     # @private
     class Wrapper
+      include SemanticLogger::Loggable
+
       def initialize(actor)
         @actor = actor
       end
 
       def publish(*args)
         actor << [:publish, *args]
+      end
+
+      def shutdown
+        actor.ask!(:shutdown)
+      rescue Concurrent::Actor::ActorTerminated
+        logger.warn("the transit actor was already terminated")
       end
 
       private
@@ -48,19 +56,19 @@ module Polyn
     # @param options [Hash] the transit options
     # @option options [Symbol|String|Class<Transporters::Base>|Hash] :transporter the transporter
     #   configuration
-    def initialize(service_manager, options = {})
+    def initialize(reactor_manager, options = {})
       super()
       logger.info("starting")
       configure_transporter(options.fetch(:transporter, :internal))
 
-      @service_manager = service_manager
+      @reactor_manager = reactor_manager
       @serializer      = Serializers.for(options.fetch(:serializer))
       @origin          = options.fetch(:origin)
 
       logger.debug("serializer set to '#{serializer.class.name}'")
 
       # Set the service pool to use the Transit thread pool.
-      Service.pool = pool
+      Reactor.pool = pool
 
       subscribe_to_events!
     end
@@ -68,11 +76,19 @@ module Polyn
     ##
     # @private
     def on_message((msg, *args))
+      puts msg  + "\n\n\n\n"
       case msg
       when :publish
         publish(*args)
       when :receive
         receive(*args)
+      when :shutdown
+        logger.warn("shutting down")
+        begin
+          transporter.disconnect!
+        rescue Concurrent::Actor::ActorTerminated
+          logger.warn("transporter already terminated")
+        end
       else
         pass
       end
@@ -80,18 +96,18 @@ module Polyn
 
     private
 
-    attr_reader :transporter, :serializer, :origin, :service_manager
+    attr_reader :transporter, :serializer, :origin, :reactor_manager
 
     def events
-      @events ||= service_manager.ask!(:services).map { |s| s.events.values }.flatten
+      @events ||= service_manager.ask!(:reactors).map { |s| s.events.values }.flatten
     end
 
     # iterates through all the services and subscribes to the events
     def subscribe_to_events!
       logger.info("subscribing to events")
       events.each do |event|
-        logger.debug("service '#{event.service.name}' is subscribing ito event '#{event.topic}'")
-        transporter.subscribe!(event.service.name, event.topic)
+        logger.debug("service '#{event.reactor.name}' is subscribing ito event '#{event.topic}'")
+        transporter.subscribe!(event.reactor.name, event.topic)
       end
     end
 

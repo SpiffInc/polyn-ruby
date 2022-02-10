@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require_relative "transit"
-require_relative "service_manager"
+require_relative "reactor_manager"
 
 module Polyn
   ##
@@ -56,13 +56,13 @@ module Polyn
       transit = options.fetch(:transit, {})
 
       transit.merge!({
-        origin: "#{name}@#{hostname}<#{pid}>",
-      })
+                       origin: "#{name}@#{hostname}<#{pid}>",
+                     })
 
-      logger.debug("starting service manager")
-      @service_manager = ServiceManager.spawn(options.fetch(:service_manager, { services: [] }))
+      logger.debug("starting reactor manager")
+      @reactor_manager = ReactorManager.spawn(options.fetch(:reactors, { reactors: [] }))
       logger.debug("starting transit")
-      @transit         = Transit.spawn(service_manager, transit)
+      @transit         = Transit.spawn(reactor_manager, transit)
     end
 
     ##
@@ -72,10 +72,10 @@ module Polyn
     # @param payload [Hash] the message to publish
     def publish(type, payload)
       event = Event.new({
-        type:   type,
-        source: "#{source_prefix}.#{name}",
-        data:   payload,
-      })
+                          type:   type,
+                          source: "#{source_prefix}.#{name}",
+                          data:   payload,
+                        })
 
       transit.publish(event)
     end
@@ -86,8 +86,17 @@ module Polyn
       case msg
       when :publish
         publish(*args)
+      when :terminated
+        begin
+          logger.fatal("there was a problem with initializing the Polyn application, shutting down" \
+                         " Check logs for details.")
+          transit.shutdown
+          reactor_manager.shutdown
+        ensure
+          abort
+        end
       else
-        raise ArgumentError, "unknown message: #{msg.inspect}"
+        pass
       end
     end
 
@@ -99,7 +108,7 @@ module Polyn
 
     private
 
-    attr_reader :service_manager, :container, :log_options, :transit, :hostname, :pid, :source_prefix
+    attr_reader :reactor_manager, :container, :log_options, :transit, :hostname, :pid, :source_prefix
 
     def origin
       "#{name}/#{hostname}/#{pid}"

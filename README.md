@@ -150,22 +150,22 @@ Services are built by sublcassing the `Polyn::Service` class. An example email s
 would look like:
 
 ```ruby
-class EmailService < Polyn::Service
+
+class EmailService < Polyn::Reactor
   event "user.added", :send_welcome_email
   event "user.updated", :send_update_email
-  
-  
+
   def send_update_email(context)
     user = User.where(context.params.user_id)
     UserMailer.with(user: user).update_email.deliver_now
 
     context.acknowledge
   end
-  
+
   def send_welcome_email(context)
     user = User.where(context.params.user_id)
     UserMailer.with(user: user).welcome_email.deliver_now
-    
+
     context.acknowledge
   end
 end

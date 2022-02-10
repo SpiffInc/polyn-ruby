@@ -19,35 +19,35 @@
 
 module Polyn
   ##
-  # A service is an event handler on the Polyn event bus.
-  class Service < Concurrent::Actor::Context
+  # A reactor is an event handler on the Polyn event bus.
+  class Reactor < Concurrent::Actor::Context
     include SemanticLogger::Loggable
 
     ##
-    # Represents an event handler within a Polyn service.
+    # Represents an event handler within a Polyn reactor.
     #
-    # @param service [Polyn::Service] The service this handler belongs to.
+    # @param reactor [Polyn::Service] The reactor this handler belongs to.
     # @param topic [String] The topic to subscribe to.
-    # @param method [Symbol] The event handler method to call on the service.
+    # @param method [Symbol] The event handler method to call on the reactor.
     # @param options [Hash] Event handler options
     class EventHandler
       include SemanticLogger::Loggable
       ##
       # @return [String] The topic this event handler is subscribed to.
-      attr_reader :topic, :service
+      attr_reader :topic, :reactor
 
-      def initialize(service, topic, method, options = {})
+      def initialize(reactor, topic, method, options = {})
         @topic   = topic
         @method  = method
         @options = options
-        @service = service
+        @reactor = reactor
       end
 
       def call(payload)
-        logger.info("calling '#{method}' on '#{service.name}'")
-        logger.info("spawning '#{service.name}'")
-        actor = service.spawn("#{service.name}-#{topic}")
-        logger.info("#{service.name} spawned with actor '#{actor}'")
+        logger.info("calling '#{method}' on '#{reactor.name}'")
+        logger.info("spawning '#{reactor.name}'")
+        actor = reactor.spawn("#{reactor.name}-#{topic}")
+        logger.info("#{reactor.name} spawned with actor '#{actor}'")
         actor << [:call, method, payload]
       end
 
@@ -62,7 +62,7 @@ module Polyn
 
     class << self
       ##
-      # @return [Hash{String => EventHandler}] the events defined in the service
+      # @return [Hash{String => EventHandler}] the events defined in the reactor
       attr_reader :events
 
       ##
@@ -78,13 +78,13 @@ module Polyn
       end
 
       ##
-      # @return [Symbol] the service of the current thread
+      # @return [Symbol] the reactor of the current thread
       def current_service_name
         Thread.local[:polyn_current_service_name] || :root
       end
 
       ##
-      # Defines an event handler for a service for the specified topic
+      # Defines an event handler for a reactor for the specified topic
       #
       # @param topic [String] the topic to listen on
       # @param method [Symbol] the method to call when the event is received
@@ -95,9 +95,9 @@ module Polyn
       end
 
       ##
-      # Gets or sets the service name
+      # Gets or sets the reactor name
       #
-      # @param name [String] the service name, if nil then the service name is returned
+      # @param name [String] the reactor name, if nil then the reactor name is returned
       def name(name = nil)
         @service_name = name if name
         @service_name
@@ -121,7 +121,7 @@ module Polyn
       end
 
       ##
-      # Sets the service thread pool
+      # Sets the reactor thread pool
       #
       # @param pool [Concurrent::ThreadPoolExecutor] the thread pool to use
       def pool=(pool)
@@ -144,7 +144,7 @@ module Polyn
         logger.trace("terminating")
         Concurrent::Actor.current.ask!(:terminate!)
       when :terminated
-        logger.warn("service was terminated.")
+        logger.warn("reactor was terminated.")
       else
         raise ArgumentError, "Unknown message '#{msg}'"
       end

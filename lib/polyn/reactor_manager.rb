@@ -20,20 +20,44 @@
 module Polyn
   ##
   # The ServiceManager is responsible for managing the life cycle of services.
-  class ServiceManager < Concurrent::Actor::Context
+  class ReactorManager < Concurrent::Actor::Context
+    ##
+    # @private
+    class Wrapper
+      include SemanticLogger::Loggable
+
+      def initialize(actor)
+        @actor = actor
+      end
+
+      def receive(*args)
+        actor.ask!(:receive, *args)
+      end
+
+      def shutdown
+        actor.ask!(:shutdown)
+      rescue Concurrent::Actor::ActorTerminated
+        logger.warn("reactor manager was already terminated")
+      end
+
+      private
+
+      attr_reader :actor
+    end
+
     include SemanticLogger::Loggable
 
     ##
     # @private
     def self.spawn(services)
-      super(:service_manager, services)
+      Wrapper.new(super(:reactor_manager, services))
     end
 
     ##
-    # @param services [Array<Polyn::Service>] the services for this node.
+    # @param services [Array<Polyn::Reactor>] the services for this node.
     def initialize(config)
       super()
-      @services = config.fetch(:services, [])
+      @reactors = config.fetch(:reactors, [])
     end
 
     ##
@@ -42,8 +66,8 @@ module Polyn
       case msg
       when :receive
         receive(*args)
-      when :services
-        services
+      when :shutdown
+        logger.warn("reactor manager was asked to shut down")
       else
         pass
       end
@@ -51,11 +75,11 @@ module Polyn
 
     private
 
-    attr_reader :services
+    attr_reader :reactors
 
     def receive(context)
-      services.each do |service|
-        service.receive(context)
+      reactors.each do |reactor|
+        reactor.receive(context)
       end
     end
   end

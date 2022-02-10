@@ -21,7 +21,7 @@ require_relative "../lib/polyn"
 
 require "benchmark"
 
-class Counter < Polyn::Service
+class Counter < Polyn::Reactor
   name "example.counter"
 
   event "increment", :increment
@@ -39,7 +39,7 @@ end
 
 t = Thread.new do
   Polyn.start(
-    services: [Counter],
+    reactors: [Counter],
   )
 end
 

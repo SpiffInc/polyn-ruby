@@ -30,7 +30,7 @@ RSpec.describe Polyn::Transit do
     )
   end
 
-  let(:service_manager) { Polyn::ServiceManager.spawn(services: []) }
+  let(:reactor_manager) { Polyn::ReactorManager.spawn(reactors: []) }
 
   let(:ev) { Concurrent::Event.new }
   describe "#publish" do

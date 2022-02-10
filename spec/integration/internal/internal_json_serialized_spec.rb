@@ -21,7 +21,7 @@ require "spec_helper"
 
 RSpec.describe "Internal Transporter with JSON Serializer" do
   let(:calc) do
-    Class.new(Polyn::Service) do
+    Class.new(Polyn::Reactor) do
       def self.result
         @result ||= Concurrent::IVar.new
       end
@@ -50,8 +50,8 @@ RSpec.describe "Internal Transporter with JSON Serializer" do
           schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
         },
       },
-      service_manager: {
-        services: [calc],
+      reactor_manager: {
+        reactors: [calc],
       },
     )
   end

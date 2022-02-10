@@ -17,29 +17,30 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
+RSpec.describe Polyn::ReactorManager do
+  let(:service_1) { class_double(Polyn::Reactor) }
+  let(:service_2) { class_double(Polyn::Reactor) }
+  subject { Polyn::ReactorManager.spawn(reactors: [service_1, service_2]) }
 
-RSpec.describe Polyn::Service do
-  let(:ev) { Concurrent::Event.new }
+  describe ":receive message" do
+    let(:context) { instance_double(Polyn::Context) }
 
-  subject do
-    Class.new(Polyn::Service) do
-      name "test-service"
-      event "test", :test
+    let(:ev) { Concurrent::Event.new }
 
-      def test(_context); end
+
+    it "should call #receive on the service" do
+      expect(service_1).to receive(:receive).with(context)
+      expect(service_2).to receive(:receive).with(context) { ev.set }
+
+      subject << [:receive, context]
+
+      ev.wait(1)
     end
   end
 
-  let(:context) { instance_double(Polyn::Context, type: "test") }
-
-  describe ":receive message" do
-    it "should call the appropriate event" do
-      expect_any_instance_of(subject).to receive(:test).with(context) { ev.set }
-
-      subject.receive(context)
-
-      ev.wait(1)
+  describe "services" do
+    it "should be capable of returning all services" do
+      expect(subject.ask!(:reactors)).to eq([service_1, service_2])
     end
   end
 end
