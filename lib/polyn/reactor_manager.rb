@@ -34,6 +34,10 @@ module Polyn
         actor.ask!(:receive, *args)
       end
 
+      def reactors
+        actor.ask!(:reactors)
+      end
+
       def shutdown
         actor.ask!(:shutdown)
       rescue Concurrent::Actor::ActorTerminated
@@ -66,6 +70,8 @@ module Polyn
       case msg
       when :receive
         receive(*args)
+      when :reactors
+        reactors
       when :shutdown
         logger.warn("reactor manager was asked to shut down")
       else

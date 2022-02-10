@@ -99,7 +99,7 @@ module Polyn
     attr_reader :transporter, :serializer, :origin, :reactor_manager
 
     def events
-      @events ||= service_manager.ask!(:reactors).map { |s| s.events.values }.flatten
+      @events ||= reactor_manager.reactors.map { |s| s.events.values }.flatten
     end
 
     # iterates through all the services and subscribes to the events
