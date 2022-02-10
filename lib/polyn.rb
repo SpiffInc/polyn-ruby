@@ -40,7 +40,7 @@ module Polyn
   # @options config [$stdout|Hash] :log_options The log options. If no options are
   #   provided, $stdout will be used.
   def self.start(config = {})
-    configure_logger(config.fetch(:log_options, $stdout))
+    configure_logger(config.fetch(:logger, $stdout))
     @application = Application.spawn(config)
   end
 
@@ -53,12 +53,19 @@ module Polyn
     @application << [:publish, topic, payload]
   end
 
-  def self.configure_logger(log_options)
-    if log_options == $stdout
+  def self.configure_logger(logger)
+    if logger == $stdout
       SemanticLogger.add_appender(io: $stdout, formatter: :color)
       SemanticLogger.default_level = :trace
+    elsif logger.is_a?(Hash)
+      SemanticLogger.add_appender(logger)
+      SemanticLogger.default_level = logger[:level] || :trace
+    else
+      Concurrent.global_logger = Utils::GenericConcurrentLoggger.new(logger)
+      return
     end
 
-    Concurrent.global_logger = Utils::ConcurrentLogger.new
+
+    Concurrent.global_logger = Utils::SemanticConcurrentLogger.new
   end
 end

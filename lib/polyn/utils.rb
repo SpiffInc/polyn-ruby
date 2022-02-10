@@ -19,4 +19,5 @@
 
 require_relative "utils/hash"
 require_relative "utils/string"
-require_relative "utils/concurrent_logger"
+require_relative "utils/semantic_concurrent_logger"
+require_relative "utils/generic_concurrent_logger"
