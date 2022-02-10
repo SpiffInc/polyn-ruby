@@ -76,7 +76,7 @@ module Polyn
     ##
     # @private
     def on_message((msg, *args))
-      puts msg  + "\n\n\n\n"
+      puts msg + "\n\n\n\n"
       case msg
       when :publish
         publish(*args)
@@ -104,6 +104,8 @@ module Polyn
 
     # iterates through all the services and subscribes to the events
     def subscribe_to_events!
+      return unless reactor_manager
+
       logger.info("subscribing to events")
       events.each do |event|
         logger.debug("service '#{event.reactor.name}' is subscribing ito event '#{event.topic}'")
@@ -113,10 +115,10 @@ module Polyn
 
     def pool
       @pool ||= Concurrent::ThreadPoolExecutor.new({
-        min_threads: 5,
-        max_threads: 10,
-        max_queue:   20,
-      })
+                                                     min_threads: 5,
+                                                     max_threads: 10,
+                                                     max_queue:   20,
+                                                   })
     end
 
     ##

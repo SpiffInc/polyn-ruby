@@ -32,6 +32,9 @@ module Polyn
 
       def initialize(transit, options = {})
         super(transit, options)
+        if Object.const_defined?("::Rails")
+          logger.warn("WARNING, the internal transporter is not supported within Rails.")
+        end
         @subscriptions = []
       end
 

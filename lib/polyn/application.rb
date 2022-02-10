@@ -60,7 +60,9 @@ module Polyn
                      })
 
       logger.debug("starting reactor manager")
-      @reactor_manager = ReactorManager.spawn(options.fetch(:reactors, { reactors: [] }))
+      unless options.dig(:reactors, :disabled)
+        @reactor_manager = ReactorManager.spawn(options.fetch(:reactors, { reactors: [] }))
+      end
       logger.debug("starting transit")
       @transit         = Transit.spawn(reactor_manager, transit)
     end
@@ -91,9 +93,10 @@ module Polyn
           logger.fatal("there was a problem with initializing the Polyn application, shutting down" \
                          " Check logs for details.")
           transit.shutdown
-          reactor_manager.shutdown
+          reactor_manager&.shutdown
         ensure
-          abort
+          puts "Polyn forced the application to exit due to an error."
+          Process.kill("INT", Process.pid)
         end
       else
         pass
