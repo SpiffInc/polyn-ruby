@@ -29,12 +29,12 @@ RSpec.describe Polyn::Transporters::Jetstream do
 
     let(:nats_client) { NATS.connect(options).jetstream }
 
-    # before :each do
-    #   nats_client.add_stream(name: "test_stream", subjects: ["test-topic"])
-    # end
+    before :each do
+      nats_client.add_stream(name: "test_stream", subjects: ["test-topic"])
+    end
 
     after :each do
-      # nats_client.subscription("test-test-topic")&.delete
+      nats_client.clos
       # nats_client.topic("test-topic")&.delete
     end
 
@@ -51,19 +51,6 @@ RSpec.describe Polyn::Transporters::Jetstream do
     end
 
     describe "#publish" do
-      before :each do
-        subject.connect!
-
-        topic   = nats_client.topic("test-topic")
-        nats_client.create_topic("test-topic") unless topic
-      end
-
-      after :each do
-        subject.disconnect!
-
-        nats_client.topic("test-topic")&.delete
-      end
-
       it "should raise Polyn::Transporters::Errors::TimeoutError when a time out occurs during publish" do
         expect_any_instance_of(Google::Cloud.nats::Topic).to receive(:publish)
           .and_raise(Google::Cloud::DeadlineExceededError)

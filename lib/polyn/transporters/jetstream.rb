@@ -92,6 +92,7 @@ module Polyn
 
       def disconnect
         logger.info("disconnecting")
+        nats.close
       end
 
       private
