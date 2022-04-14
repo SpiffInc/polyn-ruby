@@ -5,3 +5,7 @@ services:
     image: getalma/gcp-pubsub-emulator:latest
     ports:
       - "8085:8085"
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
