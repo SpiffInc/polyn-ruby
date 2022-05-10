@@ -5,6 +5,7 @@ PATH
       addressable (~> 2.8.0)
       concurrent-ruby-edge (~> 0.6.0)
       json-schema (~> 2.8.1)
+      nats-pure (~> 2.0.0)
       semantic_logger (~> 4.8)
       yard (~> 0.9)
 

@@ -1,11 +1,9 @@
 version: "3"
 
 services:
-  pubsub-emulator:
-    image: getalma/gcp-pubsub-emulator:latest
-    ports:
-      - "8085:8085"
   nats:
     image: nats:latest
     ports:
       - "4222:4222"
+    command:
+      - -js

@@ -47,8 +47,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "addressable",          "~> 2.8.0"
-  spec.add_dependency "json-schema",          "~> 2.8.1"
   spec.add_dependency "concurrent-ruby-edge", "~> 0.6.0"
+  spec.add_dependency "json-schema",          "~> 2.8.1"
+  spec.add_dependency "nats-pure",            "~> 2.0.0"
   spec.add_dependency "semantic_logger",      "~> 4.8"
   spec.add_dependency "yard",                 "~> 0.9"
 end
