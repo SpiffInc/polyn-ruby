@@ -56,5 +56,16 @@ module Polyn
           "You must configure the `source_root` for Polyn. #{message}"
       end
     end
+
+    ##
+    # Validate the event type
+    def self.validate_event_type!(name)
+      if name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:\.[a-z0-9]+)*\z/)
+        name
+      else
+        raise Polyn::Errors::ValidationError,
+          "Event types must be lowercase, alphanumeric and dot separated"
+      end
+    end
   end
 end
