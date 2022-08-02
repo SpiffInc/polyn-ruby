@@ -20,6 +20,7 @@
 require "concurrent/actor"
 require "semantic_logger"
 
+require_relative "polyn/configuration"
 require_relative "polyn/version"
 require_relative "polyn/application"
 require_relative "polyn/service"
@@ -48,10 +49,17 @@ module Polyn
   ##
   # Publishes a message on the Polyn network.
   #
-  # @param topic [String] The topic to publish the message on.
-  # @param payload [Hash] The payload to publish.
-  def self.publish(topic, payload)
-    @application << [:publish, topic, payload]
+  # @param nats [Object] Connected NATS instance from `NATS.connect`. @see https://www.rubydoc.info/gems/nats-pure/0.1.0/NATS%2FIO%2FClient:connect
+  # @param type [string] The type of event
+  # @param data [any] The data to include in the event
+  def self.publish(nats, _type, _data)
+    event = Event.new({
+      type:   type,
+      source: "#{source_prefix}.#{name}",
+      data:   payload,
+    })
+
+    nats.publish(topis, payload)
   end
 
   def self.configure_logger(log_options)
@@ -61,5 +69,17 @@ module Polyn
     end
 
     Concurrent.global_logger = Utils::ConcurrentLogger.new
+  end
+
+  ##
+  # Configuration information for Polyn
+  def self.configuration
+    @configuration ||= Configuration.new
+  end
+
+  ##
+  # Configuration block to configure Polyn
+  def self.configure
+    yield(configuration)
   end
 end

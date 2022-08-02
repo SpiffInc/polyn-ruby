@@ -18,9 +18,7 @@ Polyn implements this pattern in a manner that can be applied to multiple progra
 languages, such as Ruby, Elixir, or Python, enabling you to build services that can
 communicate regardless of the language you use.
 
-Rather than defining its own event schema, Polyn uses [Cloud Events](https://github.com/cloudevents/spec) and strictly
-enforces the event format. This means that you can use Polyn to build services that can be used by other services,
-or natively interact with things such as GCP Cloud Functions.
+Rather than defining its own event schema, Polyn uses [Cloud Events](https://github.com/cloudevents/spec) and strictly enforces the event format.
 
 ## Installation
 
@@ -35,6 +33,23 @@ And then execute:
     $ bundle install
 
 ## Configuration
+
+Use a configuration block to setup Polyn and NATS for your application
+
+### `domain`
+
+The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#type) specifies that every event "SHOULD be prefixed with a reverse-DNS name." This name should be consistent throughout your organization.
+
+### `source_root`
+
+  The [Cloud Event Spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#source-1) specifies that every event MUST have a `source` attribute and recommends it be an absolute [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier). Your application must configure the `source_root` to use for events produced at the application level. Each event producer can include its own `source` to append to the `source_root` if it makes sense.
+
+```ruby
+Polyn.configure do |config|
+  config.domain = "app.spiff"
+  config.source_root= "orders.payments"
+end
+```
 
 | Key              | Type     | Required | Default | Description                                                                                                                                                                                                                                |
 |------------------|----------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
