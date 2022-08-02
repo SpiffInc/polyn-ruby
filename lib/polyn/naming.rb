@@ -7,6 +7,12 @@ module Polyn
   # Methods for formatting and validating names of fields
   class Naming
     ##
+    # Convert a dot separated name into a colon separated name
+    def self.dot_to_colon(str)
+      str.gsub(".", ":")
+    end
+
+    ##
     # Validate that the configured `domain` is in the correct format
     def self.validate_domain_name(name)
       if name.is_a?(String) && name.match?(/\A[a-z0-9]+(?:(?:\.|:)[a-z0-9]+)*\z/)
