@@ -16,8 +16,17 @@ module Polyn
     end
 
     def domain=(name)
-      Polyn::Naming.validate_domain_name(@domain)
+      Polyn::Naming.validate_domain_name(name)
       @domain = name
+    end
+
+    def source_root
+      @source_root ||= Polyn::Naming.validate_source_root(@source_root)
+    end
+
+    def source_root=(name)
+      Polyn::Naming.validate_source_root(name)
+      @source_root = name
     end
   end
 end
