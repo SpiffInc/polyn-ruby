@@ -17,3 +17,8 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 end
+
+Polyn.configure do |config|
+  config.domain      = "com.test"
+  config.source_root = "user.backend"
+end
