@@ -79,6 +79,16 @@ RSpec.describe Polyn::Event do
     end
   end
 
+  describe "#full_source" do
+    it "gives root if no source passed in " do
+      expect(described_class.full_source).to eq("com:test:user:backend")
+    end
+
+    it "appends additional source information if provided" do
+      expect(described_class.full_source("orders.new")).to eq("com:test:user:backend:orders:new")
+    end
+  end
+
   describe "#time" do
     it "defaults to the current time" do
       Timecop.freeze do

@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "securerandom"
+require_relative "naming"
 
 module Polyn
   ##
@@ -81,6 +82,21 @@ module Polyn
         "data"            => Utils::Hash.deep_stringify_keys(data),
         "datacontenttype" => datacontenttype,
       }
+    end
+
+    def self.full_source(source = nil)
+      root = Polyn.configuration.source_root
+      name = Polyn::Naming.dot_to_colon("#{domain}:#{root}")
+
+      if source
+        "#{name}:#{Polyn::Naming.dot_to_colon(source)}"
+      else
+        name
+      end
+    end
+
+    def self.domain
+      Polyn.configuration.domain
     end
   end
 end
