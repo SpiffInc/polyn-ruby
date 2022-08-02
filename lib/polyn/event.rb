@@ -66,7 +66,7 @@ module Polyn
 
       @id              = hash.fetch(:id, SecureRandom.uuid)
       @type            = hash.fetch(:type)
-      @source          = hash.fetch(:source)
+      @source          = self.class.full_source(hash.fetch(:source))
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
       @datacontenttype = hash[:datacontenttype]
@@ -89,6 +89,7 @@ module Polyn
       name = Polyn::Naming.dot_to_colon("#{domain}:#{root}")
 
       if source
+        Polyn::Naming.validate_source_name!(source)
         "#{name}:#{Polyn::Naming.dot_to_colon(source)}"
       else
         name

@@ -21,7 +21,7 @@ RSpec.describe Polyn::Event do
   subject do
     Polyn::Event.new(
       type:   "test.event",
-      source: "/test/service",
+      source: "test.service",
       data:   {
         foo: "bar",
       },
@@ -38,7 +38,7 @@ RSpec.describe Polyn::Event do
         expect do
           Polyn::Event.new(
             type:        "test.event",
-            source:      "/test/service",
+            source:      "test.service",
             specversion: "2.0",
             data:        {
               foo: "bar",
@@ -58,7 +58,7 @@ RSpec.describe Polyn::Event do
     it "returns the passed id" do
       expect(Polyn::Event.new(
         type:   "test.event",
-        source: "/test/service",
+        source: "test.service",
         id:     "12345678-1234-1234-1234-1234567890ab",
         data:   {
           foo: "bar",
@@ -75,7 +75,7 @@ RSpec.describe Polyn::Event do
 
   describe "#source" do
     it "returns the event source" do
-      expect(subject.source).to eq("/test/service")
+      expect(subject.source).to eq("com:test:user:backend:test:service")
     end
   end
 
@@ -86,6 +86,12 @@ RSpec.describe Polyn::Event do
 
     it "appends additional source information if provided" do
       expect(described_class.full_source("orders.new")).to eq("com:test:user:backend:orders:new")
+    end
+
+    it "raises if source name is invalid" do
+      expect do
+        described_class.full_source("orders   new")
+      end.to raise_error(Polyn::Errors::ValidationError)
     end
   end
 
@@ -99,7 +105,7 @@ RSpec.describe Polyn::Event do
     it "returns the passed time" do
       expect(Polyn::Event.new(
         type:   "test.event",
-        source: "/test/service",
+        source: "test.service",
         time:   Time.new(2020, 1, 1, 12, 0, 0),
         data:   {
           foo: "bar",
