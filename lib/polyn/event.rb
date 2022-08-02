@@ -65,7 +65,7 @@ module Polyn
       end
 
       @id              = hash.fetch(:id, SecureRandom.uuid)
-      @type            = hash.fetch(:type)
+      @type            = self.class.full_type(hash.fetch(:type))
       @source          = self.class.full_source(hash.fetch(:source))
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
@@ -84,6 +84,8 @@ module Polyn
       }
     end
 
+    ##
+    # Get the Event `source` prefixed with reverse domain name
     def self.full_source(source = nil)
       root = Polyn.configuration.source_root
       name = Polyn::Naming.dot_to_colon("#{domain}:#{root}")
@@ -94,6 +96,13 @@ module Polyn
       else
         name
       end
+    end
+
+    ##
+    # Get the Event `type` prefixed with reverse domain name
+    def self.full_type(type)
+      Polyn::Naming.validate_event_type!(type)
+      "#{domain}.#{Polyn::Naming.trim_domain_prefix(type)}"
     end
 
     def self.domain

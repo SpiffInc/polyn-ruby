@@ -69,7 +69,23 @@ RSpec.describe Polyn::Event do
 
   describe "#type" do
     it "returns the event type" do
-      expect(subject.type).to eq("test.event")
+      expect(subject.type).to eq("com.test.test.event")
+    end
+  end
+
+  describe "#full_type" do
+    it "full_type/1 prefixes domain" do
+      expect("com.test.user.created.v1").to eq(described_class.full_type("user.created.v1"))
+    end
+
+    it "full_type/1 ignores existing domain prefix" do
+      expect("com.test.user.created.v1").to eq(described_class.full_type("com.test.user.created.v1"))
+    end
+
+    it "full_type/1 raises if type is invalid" do
+      expect do
+        described_class.full_type("com test user created v1")
+      end.to raise_error(Polyn::Errors::ValidationError)
     end
   end
 
