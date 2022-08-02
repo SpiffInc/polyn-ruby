@@ -15,9 +15,9 @@ RSpec.describe Polyn::SchemaStore do
 
   describe "#save" do
     it "adds a schema to the store" do
-      described_class.save(nats, "foo.bar.v1", "blah", name: store_name)
+      described_class.save(nats, "foo.bar.v1", { "foo" => "bar" }, name: store_name)
       entry = js.key_value(store_name).get("foo.bar.v1")
-      expect(entry.value).to eq("blah")
+      expect(entry.value).to eq("{\"foo\":\"bar\"}")
     end
   end
 

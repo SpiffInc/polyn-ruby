@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "json"
+require "json_schemer"
+
 module Polyn
   ##
   # Persisting and interacting with persisted schemas
@@ -10,10 +13,13 @@ module Polyn
     # Persist a schema. In prod/dev schemas should have already been persisted via
     # the Polyn CLI.
     def self.save(nats, type, schema, **opts)
+      json_schema?(schema)
       kv = nats.jetstream.key_value(store_name(opts))
-      kv.put(type, schema)
-      # is_json_schema?(schema)
-      # KV.create_key(conn, store_name(opts), type, encode(schema))
+      kv.put(type, JSON.generate(schema))
+    end
+
+    def self.json_schema?(schema)
+      JSONSchemer.schema(schema)
     end
 
     def self.store_name(**opts)
