@@ -69,7 +69,7 @@ module Polyn
       @source          = self.class.full_source(hash.fetch(:source))
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
-      @datacontenttype = hash[:datacontenttype]
+      @datacontenttype = hash.fetch(:datacontenttype, "application/json")
     end
 
     def to_h

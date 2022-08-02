@@ -137,4 +137,10 @@ RSpec.describe Polyn::Event do
       })
     end
   end
+
+  describe "#datacontenttype" do
+    it "defaults to applicationjson" do
+      expect(subject.datacontenttype).to eq("application/json")
+    end
+  end
 end
