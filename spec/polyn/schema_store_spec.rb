@@ -21,6 +21,17 @@ RSpec.describe Polyn::SchemaStore do
     end
   end
 
+  describe "#get" do
+    it "gets a schema from the store" do
+      described_class.save(nats, "foo.bar.v1", { "foo" => "bar" }, name: store_name)
+      expect(described_class.get(nats, "foo.bar.v1", name: store_name)).to eq("{\"foo\":\"bar\"}")
+    end
+
+    it "error if store does not exist" do
+      expect { described_class.get(nats, "foo.bar.v1", name: "BAD_STORE") }.to raise_error(Polyn::Errors::SchemaError)
+    end
+  end
+
   after(:each) do
     js.delete_key_value(store_name)
   end
