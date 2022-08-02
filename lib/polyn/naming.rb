@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "errors/configuration_error"
+require_relative "errors/validation_error"
 
 module Polyn
   ##
@@ -30,6 +31,17 @@ module Polyn
         true
       else
         "Event source must be lowercase, alphanumeric and dot/colon separated, got #{name}"
+      end
+    end
+
+    ##
+    # Validate the `source` name and raise if invalid
+    def self.validate_source_name!(name)
+      message = validate_source_name(name)
+      if message == true
+        name
+      else
+        raise Polyn::Errors::ValidationError, message
       end
     end
 
