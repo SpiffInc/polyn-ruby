@@ -17,84 +17,84 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
-require "google/cloud/pubsub"
-RSpec.describe "Pubsub Transporter with JSON Serializer" do
-  let(:calc) do
-    Class.new(Polyn::Service) do
-      def self.result
-        @result ||= Concurrent::IVar.new
-      end
+# require "spec_helper"
+# require "google/cloud/pubsub"
+# RSpec.describe "Pubsub Transporter with JSON Serializer" do
+#   let(:calc) do
+#     Class.new(Polyn::Service) do
+#       def self.result
+#         @result ||= Concurrent::IVar.new
+#       end
 
-      name "calc"
+#       name "calc"
 
-      event "calc.mult", :mult
-      event "calc.div", :div
+#       event "calc.mult", :mult
+#       event "calc.div", :div
 
-      def mult(ctx)
-        self.class.result.set(ctx.data[:a] * ctx.data[:b])
-      end
-    end
-  end
+#       def mult(ctx)
+#         self.class.result.set(ctx.data[:a] * ctx.data[:b])
+#       end
+#     end
+#   end
 
-  subject do
-    Polyn.start(
-      name:            "test",
-      source_prefix:   "com.test",
-      transit:         {
-        transporter: {
-          type:    :pubsub,
-          options: @options,
-        },
-        serializer:      {
-          type:          :json,
-          schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
-        },
-      },
-      service_manager: {
-        services: [calc],
-      },
-    )
-  end
+#   subject do
+#     Polyn.start(
+#       name:            "test",
+#       source_prefix:   "com.test",
+#       transit:         {
+#         transporter: {
+#           type:    :pubsub,
+#           options: @options,
+#         },
+#         serializer:      {
+#           type:          :json,
+#           schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
+#         },
+#       },
+#       service_manager: {
+#         services: [calc],
+#       },
+#     )
+#   end
 
-  before :all do
-    @options = {
-      project_id:    "test-project",
-      emulator_host: "localhost:8085",
-    }
+#   before :all do
+#     @options = {
+#       project_id:    "test-project",
+#       emulator_host: "localhost:8085",
+#     }
 
-    @pubsub_client = Google::Cloud::Pubsub.new(**@options)
+#     @pubsub_client = Google::Cloud::Pubsub.new(**@options)
 
-    topic   = @pubsub_client.topic("calc.mult")
-    topic ||= @pubsub_client.create_topic("calc.mult")
+#     topic   = @pubsub_client.topic("calc.mult")
+#     topic ||= @pubsub_client.create_topic("calc.mult")
 
-    subscription   = @pubsub_client.subscription("calc-cal.mult")
-    topic.subscribe("calc-calc.mult") unless subscription
+#     subscription   = @pubsub_client.subscription("calc-cal.mult")
+#     topic.subscribe("calc-calc.mult") unless subscription
 
-    topic   = @pubsub_client.topic("calc.div")
-    topic ||= @pubsub_client.create_topic("calc.div")
+#     topic   = @pubsub_client.topic("calc.div")
+#     topic ||= @pubsub_client.create_topic("calc.div")
 
-    subscription   = @pubsub_client.subscription("calc-calc.div")
-    topic.subscribe("calc-calc.div") unless subscription
-  end
+#     subscription   = @pubsub_client.subscription("calc-calc.div")
+#     topic.subscribe("calc-calc.div") unless subscription
+#   end
 
-  after :all do
-    @pubsub_client.subscription("calc-calc.mult")&.delete
-    @pubsub_client.topic("calc.mult")&.delete
+#   after :all do
+#     @pubsub_client.subscription("calc-calc.mult")&.delete
+#     @pubsub_client.topic("calc.mult")&.delete
 
-    @pubsub_client.subscription("calc-calc.div")&.delete
-    @pubsub_client.topic("calc.div")&.delete
-  end
+#     @pubsub_client.subscription("calc-calc.div")&.delete
+#     @pubsub_client.topic("calc.div")&.delete
+#   end
 
-  describe "publishing and subscribing" do
-    it "should publish and subscribe" do
-      subject
+#   describe "publishing and subscribing" do
+#     it "should publish and subscribe" do
+#       subject
 
-      Polyn.publish("calc.mult", a: 2, b: 3)
+#       Polyn.publish("calc.mult", a: 2, b: 3)
 
-      res = calc.result.wait(1)
+#       res = calc.result.wait(1)
 
-      expect(res.value).to eq(6)
-    end
-  end
-end
+#       expect(res.value).to eq(6)
+#     end
+#   end
+# end
