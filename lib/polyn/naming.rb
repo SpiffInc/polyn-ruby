@@ -67,5 +67,16 @@ module Polyn
           "Event types must be lowercase, alphanumeric and dot separated"
       end
     end
+
+    ##
+    # Remove the `domain` name from the beginning of a string
+    def self.trim_domain_prefix(str)
+      str = str.sub("#{domain}.", "")
+      str.sub("#{dot_to_colon(domain)}:", "")
+    end
+
+    def self.domain
+      Polyn.configuration.domain
+    end
   end
 end

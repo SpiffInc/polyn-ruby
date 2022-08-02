@@ -253,4 +253,24 @@ RSpec.describe Polyn::Naming do
         .to raise_error(Polyn::Errors::ValidationError)
     end
   end
+
+  describe "#trim_domain_prefix" do
+    it "removes prefix when dots" do
+      expect("user.created.v1.schema.v1").to eq(
+               described_class.trim_domain_prefix("com.test.user.created.v1.schema.v1"),
+             )
+    end
+
+    it "removes prefix when colon" do
+      expect("user:created:v1:schema:v1").to eq(
+             described_class.trim_domain_prefix("com:test:user:created:v1:schema:v1"),
+           )
+    end
+
+    it "only removes first occurence" do
+      expect("user.created.com.test.v1.schema.v1").to eq(
+             described_class.trim_domain_prefix("com.test.user.created.com.test.v1.schema.v1"),
+           )
+    end
+  end
 end
