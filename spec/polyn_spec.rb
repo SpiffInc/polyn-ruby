@@ -21,11 +21,11 @@ RSpec.describe Polyn do
     end
 
     it "raises if domain is not a valid format" do
-      Polyn.configure do |config|
-        config.domain = "com test"
-      end
-
-      expect { Polyn.configuration.domain }.to raise_error(Polyn::Errors::ConfigurationError)
+      expect do
+        Polyn.configure do |config|
+          config.domain = "com test"
+        end
+      end.to raise_error(Polyn::Errors::ConfigurationError)
     end
   end
 end
