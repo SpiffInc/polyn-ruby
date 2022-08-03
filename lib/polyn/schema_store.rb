@@ -3,6 +3,7 @@
 require "json"
 require "json_schemer"
 require "polyn/errors/schema_error"
+require "nats/client"
 
 module Polyn
   ##
@@ -29,7 +30,13 @@ module Polyn
       entry.value
     rescue NATS::KeyValue::BucketNotFoundError
       raise Polyn::Errors::SchemaError,
-        "The Schema Store has not been setup on your NATS server. Make sure you use the Polyn CLI to create it"
+        "The Schema Store has not been setup on your NATS server. Make sure you use "\
+        "the Polyn CLI to create it"
+    rescue NATS::JetStream::Error::NotFound
+      raise Polyn::Errors::SchemaError,
+        "Schema for #{type} does not exist. Make sure it's "\
+        "been added to your `events` codebase and has been loaded "\
+        "into the schema store on your NATS server"
     end
 
     def self.store_name(**opts)
