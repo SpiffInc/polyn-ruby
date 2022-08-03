@@ -32,6 +32,10 @@ And then execute:
 
     $ bundle install
 
+## Schema Creation
+
+In order for Polyn to process and validate event schemas you will need to use [Polyn CLI](https://github.com/SpiffInc/polyn-cli) to create an `events` codebase. Once your `events` codebase is created you can create and manage your schemas there.
+
 ## Configuration
 
 Use a configuration block to setup Polyn and NATS for your application
@@ -51,86 +55,27 @@ Polyn.configure do |config|
 end
 ```
 
-| Key              | Type     | Required | Default | Description                                                                                                                                                                                                                                |
-|------------------|----------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `:name`          | `String` | true     |         | The name of the application                                                                                                                                                                                                                |
- | `:source_prefix` | `String` | true     |         | The prefix for the source of the event. For example if the prefix is `com.test` and the service name is `calc` the source would be `com.test.calc`. To comply with Cloudevents spec, the `source_prefix` must be in reverse domain syntax. |
-|                  |          |          |         |                                                                                                                                                                                                                                            |
- | `:transit`       | `Hash`   | true     |         | The transit configuration                                                                                                                                                                                                                  |
- | `:serializer`    | `Hash`   | true     |         | The serializer configuration                                                                                                                                                                                                               |
+## Usage
 
-### Transit
+### Publishing Messages
 
-The Transit is responsible for publishing and receiving events from the transport bus. It accepts the following
+Use `Polyn.publish` to publish new events to the server
 
-| Key            | Type   | Required | Default               | Description                 |
-|----------------|--------|----------|-----------------------|-----------------------------|
-| `:transporter` | `Hash` | true     | `{ type: :internal }` | The name of the application |
+```ruby
+require "nats/client"
+require "polyn"
 
+nats = NATS.connect
 
-#### Transporters
-
-Transporters define how a service communicates with other services. They are responsible for translating events into
-a consumable format for the specified transport bus. Polyn currently supports the following transporters:
-
-* Internal (in-process, can be used for local development).
-
-Transporters are designed to be used interchangeably, which means a developer can expect a service developed locally on
-one transporter, can reliably utilize the same service on another transporter in production.
-
-
-##### Internal
-
-The internal transporter is used for local development. It is the default. It doesn't need any additional configuraiton
-to operate, but should not be used in production.
-
-#### Serializers
-
-Serializers are responsible for serializing and deserializing events. They are designed to be used interchangeably,
-and will validate the event format before dispatching the event and before processing an incoming event. Polyn currently
-supports the following serializers:
-
-* JSON
-
-##### JSON
-
-The JSON serializer is the default. It wil serialize and deserialize events into valid JSON, and will validate the
-events against the JSON schema defined in the application's configuration. Schema validation is not optional, as it
-ensures consistency across all services.
-
-The JSON serializer accepts the following configuration options:
-
-| Key              | Type     | Required | Default           | Description                                         |
-|------------------|----------|----------|-------------------|-----------------------------------------------------|
-| `:type`          | `Symbol` | true     | `{ type: :json }` | The type of serializer (this will always be `:json` |
-| `:schema_prefix` | `String` | true     |                   | The prefix to use for the schema files.             |
-
-###### Validation
-
-Validation is performed by the JSON schema validator. The validator will validate the event against the schema as defined
-in the application's configuration. For example, if the `:schema_prefix` is set to `"files://schemas"`, and the event
-is `calc.mult`, the validator will look for a file named `calc.mult.json` in the `schemas` directory. The validator
-supports both local files and remote prefixes.
-
-Example Schema:
-
-```json
-{
-  "type": "object",
-  "required": ["a", "b"],
-  "properties": {
-    "a": {
-      "type": "integer"
-    },
-    "age": {
-      "a": "integer"
-    }
-  }
-}
+Polyn.publish(nats, "user.created.v1", { name: "Mary" })
 ```
 
-Event validation occurs on both the event being dispatched and the event being received. This ensures that services
-publishing events to the bus will always be consistent with the schema.
+Add `:source` to make the `source` of the event more specific
+
+
+```ruby
+Polyn.publish(nats, "user.created.v1", { name: "Mary" }, source: "new.users")
+```
 
 ## Services
 

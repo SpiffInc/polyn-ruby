@@ -51,9 +51,9 @@ module Polyn
   # Publishes a message on the Polyn network.
   #
   # @param nats [Object] Connected NATS instance from `NATS.connect`. @see https://www.rubydoc.info/gems/nats-pure/0.1.0/NATS%2FIO%2FClient:connect
-  # @param type [string] The type of event
+  # @param type [String] The type of event
   # @param data [any] The data to include in the event
-  # @param options.source [string] Optional information to specify the source of the event
+  # @option options [String] :source - information to specify the source of the event
   def self.publish(nats, type, data, **opts)
     event = Event.new({
       type:   type,
