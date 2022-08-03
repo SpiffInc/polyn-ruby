@@ -31,6 +31,7 @@ require_relative "polyn/serializers"
 require_relative "polyn/context"
 require_relative "polyn/event"
 require_relative "polyn/exception_handlers"
+require_relative "polyn/serializers/json"
 
 ##
 # Polyn is a Reactive service framework.
@@ -52,14 +53,17 @@ module Polyn
   # @param nats [Object] Connected NATS instance from `NATS.connect`. @see https://www.rubydoc.info/gems/nats-pure/0.1.0/NATS%2FIO%2FClient:connect
   # @param type [string] The type of event
   # @param data [any] The data to include in the event
-  def self.publish(nats, _type, _data)
+  # @param options.source [string] Optional information to specify the source of the event
+  def self.publish(nats, type, data, **opts)
     event = Event.new({
       type:   type,
-      source: "#{source_prefix}.#{name}",
-      data:   payload,
+      source: opts[:source],
+      data:   data,
     })
 
-    nats.publish(topis, payload)
+    json = Polyn::Serializers::Json.serialize!(nats, event, opts)
+
+    nats.publish(type, json)
   end
 
   def self.configure_logger(log_options)

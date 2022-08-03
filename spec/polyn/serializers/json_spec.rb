@@ -43,8 +43,8 @@ RSpec.describe Polyn::Serializers::Json do
         "data" => {
           "type"       => "object",
           "properties" => {
-            "a" => "integer",
-            "b" => "integer",
+            "a" => { "type" => "integer" },
+            "b" => { "type" => "integer" },
           },
         },
       })
@@ -57,7 +57,7 @@ RSpec.describe Polyn::Serializers::Json do
         },
       )
 
-      json = described_class.serialize!(nats, event, store_name: store_name)
+      json  = described_class.serialize!(nats, event, store_name: store_name)
       event = JSON.parse(json)
       expect(event["data"]["a"]).to eq(1)
       expect(event["data"]["b"]).to eq(2)
@@ -84,8 +84,8 @@ RSpec.describe Polyn::Serializers::Json do
           "data" => {
             "type"       => "object",
             "properties" => {
-              "a" => "integer",
-              "b" => "integer",
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
             },
           },
         },
