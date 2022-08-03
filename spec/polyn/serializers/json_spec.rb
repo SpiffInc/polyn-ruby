@@ -43,7 +43,7 @@ RSpec.describe Polyn::Serializers::Json do
     end
 
     it "raises if event is not a valid cloud event" do
-      described_class.serialize!(:foo, "foo")
+      expect { described_class.serialize!(:foo, Polyn::Event.new(id: "", data: "foo", type: "calc.mult.v1")) }.to raise_error(Polyn::Errors::ValidationError)
     end
   end
 

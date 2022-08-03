@@ -33,7 +33,7 @@ module Polyn
       end
 
       def self.validate!(_nats, event, **_opts)
-        validate_cloud_event(event)
+        validate_cloud_event!(event)
       end
 
       def self.validate_event_type!(event)
@@ -45,21 +45,27 @@ module Polyn
         end
       end
 
-      def self.validate_cloud_event(event)
+      def self.validate_cloud_event!(event)
         cloud_event_schema = Polyn::CloudEvent.to_h
         schema             = JSONSchemer.schema(cloud_event_schema)
-        results            = schema.validate(event).to_a
-        puts results.class
-        puts results.length
-        puts results[0].keys
-        puts "TYPE"
-        puts results[0]["type"]
-        puts "SCHEMA POINTER"
-        puts results[0]["schema_pointer"]
-        puts "DETAILS"
-        puts results[0]["details"]
-        puts "DATA POINTER"
-        puts results[0]["data_pointer"]
+        errors             = schema.validate(event).to_a
+        errors             = format_schema_errors(errors)
+        unless errors.empty?
+          raise Polyn::Errors::ValidationError, combined_error_message(event, errors)
+        end
+      end
+
+      def self.format_schema_errors(errors)
+        errors.map do |error|
+          "Property: `#{error['data_pointer']}` - #{error['type']} - #{error['details']}"
+        end
+      end
+
+      def self.combined_error_message(event, errors)
+        [
+          "Polyn event #{event['id']} from #{event['source']} is not valid",
+          "Event data: #{event.inspect}",
+        ].concat(errors).join("\n")
       end
 
       # def validate_event(event)
