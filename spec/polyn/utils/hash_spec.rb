@@ -44,6 +44,10 @@ RSpec.describe Polyn::Utils::Hash do
         },
       })
     end
+
+    it "should return if not a hash" do
+      expect(described_class.deep_stringify_keys("foo")).to eq("foo")
+    end
   end
 
   describe "#deep_camelize_keys" do

@@ -41,8 +41,10 @@ module Polyn
       #
       # @return [::Hash] The stringified hash.
       def self.deep_stringify_keys(hash)
+        return hash unless hash.is_a?(::Hash)
+
         hash.each_with_object({}) do |(key, value), result|
-          result[key.to_s] = value.is_a?(::Hash) ? deep_stringify_keys(value) : value
+          result[key.to_s] = deep_stringify_keys(value)
         end
       end
 
