@@ -36,7 +36,8 @@ module Polyn
 
       def self.validate!(nats, event, **opts)
         validate_cloud_event!(event)
-        validate_schema!(nats, event, opts)
+        validate_data!(nats, event, opts)
+        JSON.generate(event)
       end
 
       def self.validate_event_instance!(event)
@@ -50,17 +51,16 @@ module Polyn
 
       def self.validate_cloud_event!(event)
         cloud_event_schema = Polyn::CloudEvent.to_h
-        schema             = JSONSchemer.schema(cloud_event_schema)
-        errors             = schema.validate(event).to_a
-        errors             = format_schema_errors(errors)
-        unless errors.empty?
-          raise Polyn::Errors::ValidationError, combined_error_message(event, errors)
-        end
+        validate_schema!(cloud_event_schema, event)
       end
 
-      def self.validate_schema!(nats, event, opts)
+      def self.validate_data!(nats, event, opts)
         type   = get_event_type!(event)
         schema = get_schema!(nats, type, opts)
+        validate_schema!(schema, event)
+      end
+
+      def self.validate_schema!(schema, event)
         schema = JSONSchemer.schema(schema)
         errors = schema.validate(event).to_a
         errors = format_schema_errors(errors)
