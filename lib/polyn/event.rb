@@ -66,7 +66,7 @@ module Polyn
 
       @id              = hash.fetch(:id, SecureRandom.uuid)
       @type            = self.class.full_type(hash.fetch(:type))
-      @source          = self.class.full_source(hash.fetch(:source))
+      @source          = self.class.full_source(hash[:source])
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
       @datacontenttype = hash.fetch(:datacontenttype, "application/json")

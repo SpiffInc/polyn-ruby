@@ -93,6 +93,15 @@ RSpec.describe Polyn::Event do
     it "returns the event source" do
       expect(subject.source).to eq("com:test:user:backend:test:service")
     end
+
+    it "can init with nil source" do
+      expect(Polyn::Event.new(
+        type: "test.event",
+        data: {
+          foo: "bar",
+        },
+      ).source).to eq("com:test:user:backend")
+    end
   end
 
   describe "#full_source" do
