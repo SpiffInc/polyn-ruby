@@ -18,90 +18,60 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 require "json"
-require "open-uri"
 require "json_schemer"
+require "polyn/cloud_event"
+require "polyn/event"
 
 module Polyn
   module Serializers
     ##
     # Handles serializing and deserializing data to and from JSON.
-    class Json < Base
-      DRAFT_URL   = "http://json-schema.org/draft-07/schema#"
-      SCHEMA_URL  = "https://raw.githubusercontent.com/cloudevents/spec/v1.0.1/spec.json"
-      FILE_SCHEME = "file"
-
-      REQUIRED_PROPERTIES = %w[
-        id
-        type
-        source
-        specversion
-        datacontenttype
-        time
-        data
-      ].freeze
-
-      def initialize(options = nil)
-        super
-        @schema_prefix     = options.fetch(:schema_prefix)
-        @cached_validators = {}
+    class Json
+      def self.serialize!(nats, event, **opts)
+        validate_event_type!(event)
+        validate!(nats, event.to_h, opts)
       end
 
-      def serialize(event)
-        event.datacontenttype = "application/json"
-
-        validate_event(event)
-
-        JSON.dump(event.to_h)
+      def self.validate!(_nats, event, **_opts)
+        validate_cloud_event(event)
       end
 
-      def deserialize(data)
-        hash  = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
-        event = Event.new(hash)
-
-        validate_event(event)
-
-        event
-      end
-
-      private
-
-      attr_reader :cached_validators, :schema_prefix
-
-      def validate_event(event)
-        puts schema_template(event)
-        schema = cached_validators[event.type] ||= JSONSchemer.schema(
-          schema_template(event),
-          ref_resolver: proc { |ref| resolve_ref(ref) },
-        )
-
-        validation = schema.validate(event.to_h)
-
-        raise Errors::ValidationError, validation.to_a if validation.any?
-      end
-
-      def schema_template(event)
-        {
-          "$schema"    => DRAFT_URL,
-          "$id"        => SCHEMA_URL,
-          "properties" => {
-            "datacontenttype" => {
-              "type" => "string",
-            },
-            "data"            => {
-              "$ref" => "#{schema_prefix}/#{event.type}.json",
-            },
-          },
-          "required"   => REQUIRED_PROPERTIES
-        }
-      end
-
-      def resolve_ref(ref)
-        if ref.scheme == FILE_SCHEME
-          JSON.parse(File.read(ref.path))
+      def self.validate_event_type!(event)
+        if event.instance_of?(Polyn::Event)
+          event
         else
-          JSON.parse(Net::HTTP.get(ref))
+          raise Polyn::Errors::ValidationError,
+            "Can only serialize `Polyn::Event` instances. got #{event}"
         end
       end
+
+      def self.validate_cloud_event(event)
+        cloud_event_schema = Polyn::CloudEvent.to_h
+        schema             = JSONSchemer.schema(cloud_event_schema)
+        results            = schema.validate(event).to_a
+        puts results.class
+        puts results.length
+        puts results[0].keys
+        puts "TYPE"
+        puts results[0]["type"]
+        puts "SCHEMA POINTER"
+        puts results[0]["schema_pointer"]
+        puts "DETAILS"
+        puts results[0]["details"]
+        puts "DATA POINTER"
+        puts results[0]["data_pointer"]
+      end
+
+      # def validate_event(event)
+      #   schema = cached_validators[event.type] ||= JSONSchemer.schema(
+      #     schema_template(event),
+      #     ref_resolver: proc { |ref| resolve_ref(ref) },
+      #   )
+
+      #   validation = schema.validate(event.to_h)
+
+      #   raise Errors::ValidationError, validation.to_a if validation.any?
+      # end
     end
   end
 end

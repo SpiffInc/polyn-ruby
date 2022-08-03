@@ -20,47 +20,67 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+require "polyn/errors/validation_error"
+
 RSpec.describe Polyn::Serializers::Json do
-  let(:serializer) do
-    Polyn::Serializers::Json.new(
-    schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
-  )
-  end
+  describe "#serialize!" do
+    it "serializes valid event" do
+      event = Polyn::Event.new(
+        type: "calc.mult.v1",
+        data: {
+          a: 1,
+          b: 2,
+        },
+      )
 
-  describe "#serialize" do
-    context "valid event" do
-      it "serializes a Polyn::Event into JSON by calling #to_json on the event" do
-        event = Polyn::Event.new(
-          id:     SecureRandom.uuid,
-          source: "com.test.service",
-          type:   "calc.mult",
-          data:   {
-            a: 1,
-            b: 2,
-          },
-        )
-
-        puts event.to_h
-
-        expect(serializer.serialize(event)).to eq(event.to_h.to_json)
-      end
+      described_class.serialize!(:foo, event)
     end
 
-    context "invalid event" do
-      it "raises Polyn::Serializers::Errors::ValidationError" do
-        event = Polyn::Event.new(
-          id:     SecureRandom.uuid,
-          source: "com.test.service",
-          type:   "calc.mult",
-          data:   {},
-        )
+    it "raises if event is not a Polyn::Event" do
+      expect do
+        described_class.serialize!(:foo, "foo")
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
 
-        expect do
-          serializer.serialize(event)
-        end.to raise_error(Polyn::Serializers::Errors::ValidationError)
-      end
+    it "raises if event is not a valid cloud event" do
+      described_class.serialize!(:foo, "foo")
     end
   end
+
+  # describe "#serialize" do
+  #   context "valid event" do
+  #     it "serializes a Polyn::Event into JSON by calling #to_json on the event" do
+  #       event = Polyn::Event.new(
+  #         id:     SecureRandom.uuid,
+  #         source: "com.test.service",
+  #         type:   "calc.mult",
+  #         data:   {
+  #           a: 1,
+  #           b: 2,
+  #         },
+  #       )
+
+  #       puts event.to_h
+
+  #       expect(serializer.serialize(event)).to eq(event.to_h.to_json)
+  #     end
+  #   end
+
+  #   context "invalid event" do
+  #     it "raises Polyn::Serializers::Errors::ValidationError" do
+  #       event = Polyn::Event.new(
+  #         id:     SecureRandom.uuid,
+  #         source: "com.test.service",
+  #         type:   "calc.mult",
+  #         data:   {},
+  #       )
+
+  #       expect do
+  #         serializer.serialize(event)
+  #       end.to raise_error(Polyn::Serializers::Errors::ValidationError)
+  #     end
+  #   end
+  # end
 
   describe "#deserialize" do
     context "valid event" do
