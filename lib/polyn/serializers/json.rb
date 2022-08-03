@@ -21,6 +21,8 @@ require "json"
 require "json_schemer"
 require "polyn/cloud_event"
 require "polyn/event"
+require "polyn/naming"
+require "polyn/schema_store"
 
 module Polyn
   module Serializers
@@ -28,15 +30,16 @@ module Polyn
     # Handles serializing and deserializing data to and from JSON.
     class Json
       def self.serialize!(nats, event, **opts)
-        validate_event_type!(event)
+        validate_event_instance!(event)
         validate!(nats, event.to_h, opts)
       end
 
-      def self.validate!(_nats, event, **_opts)
+      def self.validate!(nats, event, **opts)
         validate_cloud_event!(event)
+        validate_schema!(nats, event, opts)
       end
 
-      def self.validate_event_type!(event)
+      def self.validate_event_instance!(event)
         if event.instance_of?(Polyn::Event)
           event
         else
@@ -55,6 +58,27 @@ module Polyn
         end
       end
 
+      def self.validate_schema!(nats, event, opts)
+        type   = get_event_type!(event)
+        schema = get_schema!(nats, type, opts)
+        schema = JSONSchemer.schema(schema)
+        errors = schema.validate(event).to_a
+        errors = format_schema_errors(errors)
+        unless errors.empty?
+          raise Polyn::Errors::ValidationError, combined_error_message(event, errors)
+        end
+      end
+
+      def self.get_event_type!(event)
+        event["type"] || raise(Polyn::Errors::ValidationError,
+          "Could not find a `type` in message #{event.inspect} \nEvery event must have a `type`")
+        Polyn::Naming.trim_domain_prefix(event["type"])
+      end
+
+      def self.get_schema!(nats, type, **opts)
+        Polyn::SchemaStore.get(nats, type, name: store_name(opts))
+      end
+
       def self.format_schema_errors(errors)
         errors.map do |error|
           "Property: `#{error['data_pointer']}` - #{error['type']} - #{error['details']}"
@@ -66,6 +90,10 @@ module Polyn
           "Polyn event #{event['id']} from #{event['source']} is not valid",
           "Event data: #{event.inspect}",
         ].concat(errors).join("\n")
+      end
+
+      def self.store_name(**opts)
+        opts.fetch(:store_name, Polyn::SchemaStore.store_name)
       end
 
       # def validate_event(event)

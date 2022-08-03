@@ -20,11 +20,35 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+require "polyn/schema_store"
 require "polyn/errors/validation_error"
+require "nats/client"
 
 RSpec.describe Polyn::Serializers::Json do
+  let(:nats) { NATS.connect }
+  let(:js) { nats.jetstream }
+  let(:store_name) { "JSON_SERIALIZER_TEST_STORE" }
+
+  before(:each) do
+    js.create_key_value(bucket: store_name)
+  end
+
+  after(:each) do
+    js.delete_key_value(store_name)
+  end
+
   describe "#serialize!" do
     it "serializes valid event" do
+      add_schema("calc.mult.v1", {
+        "data" => {
+          "type"       => "object",
+          "properties" => {
+            "a" => "integer",
+            "b" => "integer",
+          },
+        },
+      })
+
       event = Polyn::Event.new(
         type: "calc.mult.v1",
         data: {
@@ -33,18 +57,45 @@ RSpec.describe Polyn::Serializers::Json do
         },
       )
 
-      described_class.serialize!(:foo, event)
+      described_class.serialize!(nats, event, store_name: store_name)
     end
 
     it "raises if event is not a Polyn::Event" do
       expect do
-        described_class.serialize!(:foo, "foo")
+        described_class.serialize!(nats, "foo", store_name: store_name)
       end.to raise_error(Polyn::Errors::ValidationError)
     end
 
     it "raises if event is not a valid cloud event" do
-      expect { described_class.serialize!(:foo, Polyn::Event.new(id: "", data: "foo", type: "calc.mult.v1")) }.to raise_error(Polyn::Errors::ValidationError)
+      expect do
+        described_class.serialize!(nats,
+          Polyn::Event.new(id: "", data: "foo", type: "calc.mult.v1"), store_name: store_name)
+      end.to raise_error(Polyn::Errors::ValidationError)
     end
+
+    it "raises if event data is not valid" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => "integer",
+              "b" => "integer",
+            },
+          },
+        },
+      })
+
+      expect do
+        described_class.serialize!(nats,
+          Polyn::Event.new(data: "foo", type: "calc.mult.v1"), store_name: store_name)
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+  end
+
+  def add_schema(type, schema)
+    Polyn::SchemaStore.save(nats, type, schema, name: store_name)
   end
 
   # describe "#serialize" do
@@ -82,47 +133,47 @@ RSpec.describe Polyn::Serializers::Json do
   #   end
   # end
 
-  describe "#deserialize" do
-    context "valid event" do
-      it "deserializes a JSON string into a Polyn::Event" do
-        event = serializer.deserialize({
-          time:            time = Time.now.utc.iso8601,
-          type:            "calc.mult",
-          source:          "com.test.service",
-          id:              id   = SecureRandom.uuid,
-          datacontenttype: "application/json",
-          data:            {
-            a: 1,
-            b: 2,
-          },
-        }.to_json)
+  # describe "#deserialize" do
+  #   context "valid event" do
+  #     it "deserializes a JSON string into a Polyn::Event" do
+  #       event = serializer.deserialize({
+  #         time:            time = Time.now.utc.iso8601,
+  #         type:            "calc.mult",
+  #         source:          "com.test.service",
+  #         id:              id   = SecureRandom.uuid,
+  #         datacontenttype: "application/json",
+  #         data:            {
+  #           a: 1,
+  #           b: 2,
+  #         },
+  #       }.to_json)
 
-        expect(event).to be_an_instance_of(Polyn::Event)
-        expect(event.id).to eq(id)
-        expect(event.time).to eq(time)
-        expect(event.type).to eq("calc.mult")
-        expect(event.source).to eq("com.test.service")
-        expect(event.datacontenttype).to eq("application/json")
-        expect(event.data).to eq({
-          a: 1,
-          b: 2,
-        })
-      end
-    end
+  #       expect(event).to be_an_instance_of(Polyn::Event)
+  #       expect(event.id).to eq(id)
+  #       expect(event.time).to eq(time)
+  #       expect(event.type).to eq("calc.mult")
+  #       expect(event.source).to eq("com.test.service")
+  #       expect(event.datacontenttype).to eq("application/json")
+  #       expect(event.data).to eq({
+  #         a: 1,
+  #         b: 2,
+  #       })
+  #     end
+  #   end
 
-    context "invalid event" do
-      it "raises Polyn::Serializers::Errors::ValidationError" do
-        expect do
-          serializer.deserialize({
-            time:   Time.now.utc.iso8601,
-            type:   "calc.mult",
-            source: "com.test.service",
-            id:     SecureRandom.uuid,
-            data:   {
-            },
-          }.to_json)
-        end.to raise_error(Polyn::Serializers::Errors::ValidationError)
-      end
-    end
-  end
+  #   context "invalid event" do
+  #     it "raises Polyn::Serializers::Errors::ValidationError" do
+  #       expect do
+  #         serializer.deserialize({
+  #           time:   Time.now.utc.iso8601,
+  #           type:   "calc.mult",
+  #           source: "com.test.service",
+  #           id:     SecureRandom.uuid,
+  #           data:   {
+  #           },
+  #         }.to_json)
+  #       end.to raise_error(Polyn::Serializers::Errors::ValidationError)
+  #     end
+  #   end
+  # end
 end

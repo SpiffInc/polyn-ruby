@@ -13,6 +13,10 @@ RSpec.describe Polyn::SchemaStore do
     js.create_key_value(bucket: store_name)
   end
 
+  after(:each) do
+    js.delete_key_value(store_name)
+  end
+
   describe "#save" do
     it "adds a schema to the store" do
       described_class.save(nats, "foo.bar.v1", { "foo" => "bar" }, name: store_name)
@@ -40,9 +44,5 @@ RSpec.describe Polyn::SchemaStore do
           name: store_name)
       end.to raise_error(Polyn::Errors::SchemaError)
     end
-  end
-
-  after(:each) do
-    js.delete_key_value(store_name)
   end
 end
