@@ -31,12 +31,12 @@ module Polyn
     class Json
       def self.serialize!(nats, event, **opts)
         validate_event_instance!(event)
-        validate!(nats, event.to_h, opts)
+        validate!(nats, event.to_h, **opts)
       end
 
       def self.validate!(nats, event, **opts)
         validate_cloud_event!(event)
-        validate_data!(nats, event, opts)
+        validate_data!(nats, event, **opts)
         JSON.generate(event)
       end
 
@@ -54,9 +54,9 @@ module Polyn
         validate_schema!(cloud_event_schema, event)
       end
 
-      def self.validate_data!(nats, event, opts)
+      def self.validate_data!(nats, event, **opts)
         type   = get_event_type!(event)
-        schema = get_schema!(nats, type, opts)
+        schema = get_schema!(nats, type, **opts)
         validate_schema!(schema, event)
       end
 
@@ -76,7 +76,7 @@ module Polyn
       end
 
       def self.get_schema!(nats, type, **opts)
-        Polyn::SchemaStore.get(nats, type, name: store_name(opts))
+        Polyn::SchemaStore.get(nats, type, name: store_name(**opts))
       end
 
       def self.format_schema_errors(errors)

@@ -49,7 +49,7 @@ module Polyn
       triggered_by: opts[:triggered_by],
     })
 
-    json = Polyn::Serializers::Json.serialize!(nats, event, opts)
+    json = Polyn::Serializers::Json.serialize!(nats, event, **opts)
 
     nats.publish(type, json, opts[:reply_to], header: opts[:header])
   end

@@ -16,7 +16,7 @@ module Polyn
     # the Polyn CLI.
     def self.save(nats, type, schema, **opts)
       json_schema?(schema)
-      kv = nats.jetstream.key_value(store_name(opts))
+      kv = nats.jetstream.key_value(store_name(**opts))
       kv.put(type, JSON.generate(schema))
     end
 
@@ -25,7 +25,7 @@ module Polyn
     end
 
     def self.get(nats, type, **opts)
-      kv    = nats.jetstream.key_value(store_name(opts))
+      kv    = nats.jetstream.key_value(store_name(**opts))
       entry = kv.get(type)
       entry.value
     rescue NATS::KeyValue::BucketNotFoundError
