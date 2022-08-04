@@ -95,17 +95,6 @@ module Polyn
       def self.store_name(**opts)
         opts.fetch(:store_name, Polyn::SchemaStore.store_name)
       end
-
-      # def validate_event(event)
-      #   schema = cached_validators[event.type] ||= JSONSchemer.schema(
-      #     schema_template(event),
-      #     ref_resolver: proc { |ref| resolve_ref(ref) },
-      #   )
-
-      #   validation = schema.validate(event.to_h)
-
-      #   raise Errors::ValidationError, validation.to_a if validation.any?
-      # end
     end
   end
 end
