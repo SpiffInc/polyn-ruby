@@ -57,6 +57,11 @@ RSpec.describe Polyn::Utils::Hash do
       })
     end
 
+    it "can deep stringify an array" do
+      arr = [{ a: "b" }, { c: "d" }]
+      expect(described_class.deep_stringify_keys(arr)).to eq([{ "a" => "b" }, { "c" => "d" }])
+    end
+
     it "should return if not a hash" do
       expect(described_class.deep_stringify_keys("foo")).to eq("foo")
     end
