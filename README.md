@@ -77,6 +77,13 @@ Add `:source` to make the `source` of the event more specific
 Polyn.publish(nats, "user.created.v1", { name: "Mary" }, source: "new.users")
 ```
 
+Add `:triggered_by` to add a triggering event to the `polyntrace`
+
+```ruby
+event = Polyn::Event.new
+Polyn.publish(nats, "user.created.v1", { name: "Mary" }, triggered_by: event)
+```
+
 ## Services
 
 Services are built by sublcassing the `Polyn::Service` class. An example email service

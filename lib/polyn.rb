@@ -54,11 +54,14 @@ module Polyn
   # @param type [String] The type of event
   # @param data [any] The data to include in the event
   # @option options [String] :source - information to specify the source of the event
+  # @option options [String] :triggered_by - The event that triggered this one.
+  # Will use information from the event to build up the `polyntrace` data
   def self.publish(nats, type, data, **opts)
     event = Event.new({
-      type:   type,
-      source: opts[:source],
-      data:   data,
+      type:         type,
+      source:       opts[:source],
+      data:         data,
+      triggered_by: opts[:triggered_by],
     })
 
     json = Polyn::Serializers::Json.serialize!(nats, event, opts)

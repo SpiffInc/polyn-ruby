@@ -56,6 +56,48 @@ RSpec.describe Polyn do
       js.delete_stream("CALC")
     end
 
+    it "adds triggered_by to polyntrace" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
+      js.add_consumer("CALC", durable_name: "my_consumer")
+
+      first_event = Polyn::Event.new({ type: "first.event", data: "foo" })
+
+      Polyn.publish(nats, "calc.mult.v1", {
+        a: 1,
+        b: 2,
+      }, store_name: store_name, triggered_by: first_event)
+
+      psub = js.pull_subscribe("calc.mult.v1", "my_consumer", stream: "CALC")
+
+      msgs = psub.fetch(1)
+      msgs.each do |msg|
+        event = JSON.parse(msg.data)
+        expect(event["polyntrace"]).to eq([
+                                            {
+                                              "id"   => first_event.id,
+                                              "type" => first_event.type,
+                                              "time" => first_event.time,
+                                            },
+                                          ])
+        msg.ack
+      end
+
+      js.delete_stream("CALC")
+    end
+
     it "raises if msg doesn't conform to schema" do
       add_schema("calc.mult.v1", {
         "type"       => "object",
