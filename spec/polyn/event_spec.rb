@@ -196,4 +196,12 @@ RSpec.describe Polyn::Event do
                                      ])
     end
   end
+
+  describe "#polyndata" do
+    it "has client information" do
+      expect(subject.polyndata[:clientlang]).to eq("ruby")
+      expect(subject.polyndata[:clientlangversion]).to eq(RUBY_VERSION)
+      expect(subject.polyndata[:clientversion]).to eq(Polyn::VERSION)
+    end
+  end
 end

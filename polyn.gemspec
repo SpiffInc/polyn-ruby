@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = "Polyn Service Framework"
   spec.description   = "A lightweight reactive microservice framework."
-  spec.homepage      = "https://github.com/spiffinc/polyn-rb"
+  spec.homepage      = "https://github.com/spiffinc/polyn-ruby"
   spec.license       = "MIT"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.4.0")
 

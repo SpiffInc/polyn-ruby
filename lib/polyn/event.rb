@@ -19,6 +19,7 @@
 
 require "securerandom"
 require_relative "naming"
+require_relative "version"
 
 module Polyn
   ##
@@ -61,6 +62,11 @@ module Polyn
     # @return [Array] Previous events that led to this one
     attr_reader :polyntrace
 
+    ##
+    # @return [Hash] Represents the information about the client that published the event
+    # as well as additional metadata
+    attr_reader :polyndata
+
     def initialize(hash)
       @specversion = hash.key?(:specversion) ? hash[:specversion] : "1.0"
 
@@ -75,6 +81,11 @@ module Polyn
       @data            = hash.fetch(:data)
       @datacontenttype = hash.fetch(:datacontenttype, "application/json")
       @polyntrace      = self.class.build_polyntrace(hash[:triggered_by])
+      @polyndata       = {
+        clientlang:        "ruby",
+        clientlangversion: RUBY_VERSION,
+        clientversion:     Polyn::VERSION,
+      }
     end
 
     def to_h
@@ -87,6 +98,7 @@ module Polyn
         "data"            => Utils::Hash.deep_stringify_keys(data),
         "datacontenttype" => datacontenttype,
         "polyntrace"      => Utils::Hash.deep_stringify_keys(polyntrace),
+        "polyndata"       => Utils::Hash.deep_stringify_keys(polyndata),
       }
     end
 
