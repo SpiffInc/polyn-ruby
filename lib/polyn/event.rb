@@ -57,6 +57,10 @@ module Polyn
     # @return [String] the data
     attr_reader :data
 
+    ##
+    # @return [Array] Previous events that led to this one
+    attr_reader :polyntrace
+
     def initialize(hash)
       @specversion = hash.key?(:specversion) ? hash[:specversion] : "1.0"
 
@@ -70,6 +74,7 @@ module Polyn
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
       @datacontenttype = hash.fetch(:datacontenttype, "application/json")
+      @polyntrace      = self.class.build_polyntrace(hash[:triggered_by])
     end
 
     def to_h
@@ -81,6 +86,7 @@ module Polyn
         "time"            => time,
         "data"            => Utils::Hash.deep_stringify_keys(data),
         "datacontenttype" => datacontenttype,
+        "polyntrace"      => Utils::Hash.deep_stringify_keys(polyntrace),
       }
     end
 
@@ -103,6 +109,18 @@ module Polyn
     def self.full_type(type)
       Polyn::Naming.validate_event_type!(type)
       "#{domain}.#{Polyn::Naming.trim_domain_prefix(type)}"
+    end
+
+    ##
+    # Use a triggering event to build the polyntrace of a new event
+    def self.build_polyntrace(triggered_by)
+      return [] unless triggered_by
+
+      triggered_by.polyntrace.concat([{
+        id:   triggered_by.id,
+        type: triggered_by.type,
+        time: triggered_by.time,
+      }])
     end
 
     def self.domain
