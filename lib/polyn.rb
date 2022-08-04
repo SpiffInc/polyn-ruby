@@ -17,15 +17,24 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# Loading all our classes up front
 require "concurrent/actor"
+require "json_schemer"
+require "json"
+require "nats/client"
+require "securerandom"
 require "semantic_logger"
 
-require_relative "polyn/configuration"
-require_relative "polyn/version"
-require_relative "polyn/utils"
-require_relative "polyn/event"
-require_relative "polyn/exception_handlers"
-require_relative "polyn/serializers/json"
+require "polyn/configuration"
+require "polyn/cloud_event"
+require "polyn/errors/errors"
+require "polyn/event"
+require "polyn/exception_handlers"
+require "polyn/naming"
+require "polyn/schema_store"
+require "polyn/serializers/json"
+require "polyn/utils/utils"
+require "polyn/version"
 
 ##
 # Polyn is a Reactive service framework.

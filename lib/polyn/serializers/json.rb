@@ -17,13 +17,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "json"
-require "json_schemer"
-require "polyn/cloud_event"
-require "polyn/event"
-require "polyn/naming"
-require "polyn/schema_store"
-
 module Polyn
   module Serializers
     ##

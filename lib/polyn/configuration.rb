@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "naming"
-
 module Polyn
   ##
   # Configuration data for Polyn

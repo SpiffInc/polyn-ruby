@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require "polyn/schema_store"
-require "polyn/errors/validation_error"
-require "nats/client"
+require "spec_helper"
 
 RSpec.describe Polyn::Serializers::Json do
   let(:nats) { NATS.connect }

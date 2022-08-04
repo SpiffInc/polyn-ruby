@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "polyn/cloud_event"
 
 RSpec.describe Polyn::CloudEvent do
   describe "#to_h" do

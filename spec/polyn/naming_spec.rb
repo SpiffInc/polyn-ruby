@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "polyn/naming"
-require "polyn/errors/configuration_error"
-require "polyn/errors/validation_error"
 
 RSpec.describe Polyn::Naming do
   describe "#dot_to_colon" do

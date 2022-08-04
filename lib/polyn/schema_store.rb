@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-require "json"
-require "json_schemer"
-require "polyn/errors/schema_error"
-require "nats/client"
-
 module Polyn
   ##
   # Persisting and interacting with persisted schemas

@@ -17,10 +17,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "securerandom"
-require_relative "naming"
-require_relative "version"
-
 module Polyn
   ##
   # Represents an event. Events follow the [Cloudevents](https://github.com/cloudevents)

@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "polyn/errors/validation_error"
-require "polyn/schema_store"
 
 RSpec.describe Polyn do
   let(:nats) { NATS.connect }

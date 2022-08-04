@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright 2021-2022 Spiff, Inc.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this
@@ -15,9 +17,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-module Polyn
-  module Errors
-    class TransporterTopicNotFoundError < Error
-    end
-  end
-end
+require "polyn/utils/hash"
+require "polyn/utils/string"
+require "polyn/utils/concurrent_logger"

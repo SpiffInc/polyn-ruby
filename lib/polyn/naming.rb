@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "errors/configuration_error"
-require_relative "errors/validation_error"
-
 module Polyn
   ##
   # Methods for formatting and validating names of fields

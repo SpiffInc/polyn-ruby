@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "nats/client"
-require "polyn/schema_store"
 
 RSpec.describe Polyn::SchemaStore do
   let(:store_name) { "STORE_NAME_TEST_STORE" }

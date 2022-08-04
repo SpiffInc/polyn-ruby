@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "polyn/configuration"
-require "polyn/errors/configuration_error"
 
 RSpec.describe Polyn::Configuration do
   subject do
