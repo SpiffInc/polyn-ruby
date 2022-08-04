@@ -50,7 +50,7 @@ module Polyn
   ##
   # Publishes a message on the Polyn network.
   #
-  # @param nats [Object] Connected NATS instance from `NATS.connect`. @see https://www.rubydoc.info/gems/nats-pure/0.1.0/NATS%2FIO%2FClient:connect
+  # @param nats [Object] Connected NATS instance from `NATS.connect`
   # @param type [String] The type of event
   # @param data [any] The data to include in the event
   # @option options [String] :source - information to specify the source of the event
