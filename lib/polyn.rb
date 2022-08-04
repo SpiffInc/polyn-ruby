@@ -56,6 +56,8 @@ module Polyn
   # @option options [String] :source - information to specify the source of the event
   # @option options [String] :triggered_by - The event that triggered this one.
   # Will use information from the event to build up the `polyntrace` data
+  # @option options [String] :reply_to - Reply to a specific topic
+  # @option options [String] :header - Headers to include in the message
   def self.publish(nats, type, data, **opts)
     event = Event.new({
       type:         type,
@@ -66,7 +68,7 @@ module Polyn
 
     json = Polyn::Serializers::Json.serialize!(nats, event, opts)
 
-    nats.publish(type, json)
+    nats.publish(type, json, opts[:reply_to], header: opts[:header])
   end
 
   def self.configure_logger(log_options)

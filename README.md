@@ -84,6 +84,8 @@ event = Polyn::Event.new
 Polyn.publish(nats, "user.created.v1", { name: "Mary" }, triggered_by: event)
 ```
 
+You can also include options of `:header` and/or `:reply_to` to passthrough to NATS
+
 ## Services
 
 Services are built by sublcassing the `Polyn::Service` class. An example email service
