@@ -22,13 +22,7 @@ require "semantic_logger"
 
 require_relative "polyn/configuration"
 require_relative "polyn/version"
-require_relative "polyn/application"
-require_relative "polyn/service"
-require_relative "polyn/errors"
-require_relative "polyn/transporters"
 require_relative "polyn/utils"
-require_relative "polyn/serializers"
-require_relative "polyn/context"
 require_relative "polyn/event"
 require_relative "polyn/exception_handlers"
 require_relative "polyn/serializers/json"
@@ -36,17 +30,6 @@ require_relative "polyn/serializers/json"
 ##
 # Polyn is a Reactive service framework.
 module Polyn
-  ##
-  # Starts the application with the provided configuration.
-  #
-  # @param config [Hash] The configuration for the application.
-  # @options config [$stdout|Hash] :log_options The log options. If no options are
-  #   provided, $stdout will be used.
-  def self.start(config = {})
-    configure_logger(config.fetch(:log_options, $stdout))
-    @application = Application.spawn(config)
-  end
-
   ##
   # Publishes a message on the Polyn network.
   #
@@ -69,15 +52,6 @@ module Polyn
     json = Polyn::Serializers::Json.serialize!(nats, event, opts)
 
     nats.publish(type, json, opts[:reply_to], header: opts[:header])
-  end
-
-  def self.configure_logger(log_options)
-    if log_options == $stdout
-      SemanticLogger.add_appender(io: $stdout, formatter: :color)
-      SemanticLogger.default_level = :trace
-    end
-
-    Concurrent.global_logger = Utils::ConcurrentLogger.new
   end
 
   ##
