@@ -22,10 +22,11 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in polyn.gemspec
 gemspec
 
-gem "google-cloud-pubsub"
 gem "rake", "~> 13.0"
 gem "rspec", "~> 3.0"
 gem "rubocop", "~> 1.7"
 gem "simplecov"
 gem "timecop"
 gem "json_schemer"
+# EventMachine nats repo doesn't support jetstream, only nats-pure
+gem "nats-pure", "~> 2.0"

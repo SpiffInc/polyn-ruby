@@ -17,49 +17,61 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# Loading all our classes up front
 require "concurrent/actor"
+require "json_schemer"
+require "json"
+require "nats/client"
+require "securerandom"
 require "semantic_logger"
 
-require_relative "polyn/version"
-require_relative "polyn/application"
-require_relative "polyn/service"
-require_relative "polyn/errors"
-require_relative "polyn/transporters"
-require_relative "polyn/utils"
-require_relative "polyn/serializers"
-require_relative "polyn/context"
-require_relative "polyn/event"
-require_relative "polyn/exception_handlers"
+require "polyn/configuration"
+require "polyn/cloud_event"
+require "polyn/errors/errors"
+require "polyn/event"
+require "polyn/exception_handlers"
+require "polyn/naming"
+require "polyn/schema_store"
+require "polyn/serializers/json"
+require "polyn/utils/utils"
+require "polyn/version"
 
 ##
 # Polyn is a Reactive service framework.
 module Polyn
   ##
-  # Starts the application with the provided configuration.
+  # Publishes a message on the Polyn network.
   #
-  # @param config [Hash] The configuration for the application.
-  # @options config [$stdout|Hash] :log_options The log options. If no options are
-  #   provided, $stdout will be used.
-  def self.start(config = {})
-    configure_logger(config.fetch(:log_options, $stdout))
-    @application = Application.spawn(config)
+  # @param nats [Object] Connected NATS instance from `NATS.connect`
+  # @param type [String] The type of event
+  # @param data [any] The data to include in the event
+  # @option options [String] :source - information to specify the source of the event
+  # @option options [String] :triggered_by - The event that triggered this one.
+  # Will use information from the event to build up the `polyntrace` data
+  # @option options [String] :reply_to - Reply to a specific topic
+  # @option options [String] :header - Headers to include in the message
+  def self.publish(nats, type, data, **opts)
+    event = Event.new({
+      type:         type,
+      source:       opts[:source],
+      data:         data,
+      triggered_by: opts[:triggered_by],
+    })
+
+    json = Polyn::Serializers::Json.serialize!(nats, event, **opts)
+
+    nats.publish(type, json, opts[:reply_to], header: opts[:header])
   end
 
   ##
-  # Publishes a message on the Polyn network.
-  #
-  # @param topic [String] The topic to publish the message on.
-  # @param payload [Hash] The payload to publish.
-  def self.publish(topic, payload)
-    @application << [:publish, topic, payload]
+  # Configuration information for Polyn
+  def self.configuration
+    @configuration ||= Configuration.new
   end
 
-  def self.configure_logger(log_options)
-    if log_options == $stdout
-      SemanticLogger.add_appender(io: $stdout, formatter: :color)
-      SemanticLogger.default_level = :trace
-    end
-
-    Concurrent.global_logger = Utils::ConcurrentLogger.new
+  ##
+  # Configuration block to configure Polyn
+  def self.configure
+    yield(configuration)
   end
 end

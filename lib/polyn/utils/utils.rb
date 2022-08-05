@@ -17,53 +17,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "spec_helper"
-
-RSpec.describe "Internal Transporter with JSON Serializer" do
-  let(:calc) do
-    Class.new(Polyn::Service) do
-      def self.result
-        @result ||= Concurrent::IVar.new
-      end
-
-      name "calc"
-
-      event "calc.mult", :mult
-      event "calc.div", :div
-
-      def mult(ctx)
-        self.class.result.set(ctx.data[:a] * ctx.data[:b])
-      end
-    end
-  end
-
-  subject do
-    Polyn.start(
-      name:            "test",
-      source_prefix:   "com.test",
-      transit:         {
-        transporter: {
-          type: :internal,
-        },
-        serializer:  {
-          type:          :json,
-          schema_prefix: "file://#{File.expand_path('../../fixtures', __dir__)}",
-        },
-      },
-      service_manager: {
-        services: [calc],
-      },
-    )
-  end
-
-  describe "publishing and subscribing" do
-    it "should publish and subscribe" do
-      subject
-      Polyn.publish("calc.mult", a: 2, b: 3)
-
-      res = calc.result.wait(1)
-
-      expect(res.value).to eq(6)
-    end
-  end
-end
+require "polyn/utils/hash"
+require "polyn/utils/string"
+require "polyn/utils/concurrent_logger"

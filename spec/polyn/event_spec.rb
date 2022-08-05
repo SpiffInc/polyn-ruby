@@ -21,7 +21,7 @@ RSpec.describe Polyn::Event do
   subject do
     Polyn::Event.new(
       type:   "test.event",
-      source: "/test/service",
+      source: "test.service",
       data:   {
         foo: "bar",
       },
@@ -38,7 +38,7 @@ RSpec.describe Polyn::Event do
         expect do
           Polyn::Event.new(
             type:        "test.event",
-            source:      "/test/service",
+            source:      "test.service",
             specversion: "2.0",
             data:        {
               foo: "bar",
@@ -58,7 +58,7 @@ RSpec.describe Polyn::Event do
     it "returns the passed id" do
       expect(Polyn::Event.new(
         type:   "test.event",
-        source: "/test/service",
+        source: "test.service",
         id:     "12345678-1234-1234-1234-1234567890ab",
         data:   {
           foo: "bar",
@@ -69,13 +69,54 @@ RSpec.describe Polyn::Event do
 
   describe "#type" do
     it "returns the event type" do
-      expect(subject.type).to eq("test.event")
+      expect(subject.type).to eq("com.test.test.event")
+    end
+  end
+
+  describe "#full_type" do
+    it "full_type/1 prefixes domain" do
+      expect("com.test.user.created.v1").to eq(described_class.full_type("user.created.v1"))
+    end
+
+    it "full_type/1 ignores existing domain prefix" do
+      expect("com.test.user.created.v1").to eq(described_class.full_type("com.test.user.created.v1"))
+    end
+
+    it "full_type/1 raises if type is invalid" do
+      expect do
+        described_class.full_type("com test user created v1")
+      end.to raise_error(Polyn::Errors::ValidationError)
     end
   end
 
   describe "#source" do
     it "returns the event source" do
-      expect(subject.source).to eq("/test/service")
+      expect(subject.source).to eq("com:test:user:backend:test:service")
+    end
+
+    it "can init with nil source" do
+      expect(Polyn::Event.new(
+        type: "test.event",
+        data: {
+          foo: "bar",
+        },
+      ).source).to eq("com:test:user:backend")
+    end
+  end
+
+  describe "#full_source" do
+    it "gives root if no source passed in " do
+      expect(described_class.full_source).to eq("com:test:user:backend")
+    end
+
+    it "appends additional source information if provided" do
+      expect(described_class.full_source("orders.new")).to eq("com:test:user:backend:orders:new")
+    end
+
+    it "raises if source name is invalid" do
+      expect do
+        described_class.full_source("orders   new")
+      end.to raise_error(Polyn::Errors::ValidationError)
     end
   end
 
@@ -89,7 +130,7 @@ RSpec.describe Polyn::Event do
     it "returns the passed time" do
       expect(Polyn::Event.new(
         type:   "test.event",
-        source: "/test/service",
+        source: "test.service",
         time:   Time.new(2020, 1, 1, 12, 0, 0),
         data:   {
           foo: "bar",
@@ -103,6 +144,64 @@ RSpec.describe Polyn::Event do
       expect(subject.data).to eq({
         foo: "bar",
       })
+    end
+  end
+
+  describe "#datacontenttype" do
+    it "defaults to applicationjson" do
+      expect(subject.datacontenttype).to eq("application/json")
+    end
+  end
+
+  describe "#polyntrace" do
+    it "defaults polyntrace to empty list" do
+      expect(subject.polyntrace).to eq([])
+    end
+
+    it "adds polyntrace from triggering event" do
+      first = Polyn::Event.new(
+        type: "first.event",
+        data: {
+          foo: "bar",
+        },
+      )
+
+      second = Polyn::Event.new(
+        type:         "second.event",
+        data:         {
+          foo: "bar",
+        },
+        triggered_by: first,
+      )
+
+      third = Polyn::Event.new(
+        type:         "third.event",
+        data:         {
+          foo: "bar",
+        },
+        triggered_by: second,
+      )
+
+      expect(third.polyntrace).to eq([
+                                       {
+                                         id:   first.id,
+                                         type: first.type,
+                                         time: first.time,
+                                       },
+                                       {
+                                         id:   second.id,
+                                         type: second.type,
+                                         time: second.time,
+                                       },
+                                     ])
+    end
+  end
+
+  describe "#polyndata" do
+    it "has client information" do
+      expect(subject.polyndata[:clientlang]).to eq("ruby")
+      expect(subject.polyndata[:clientlangversion]).to eq(RUBY_VERSION)
+      expect(subject.polyndata[:clientversion]).to eq(Polyn::VERSION)
     end
   end
 end

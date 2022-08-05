@@ -17,8 +17,6 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "securerandom"
-
 module Polyn
   ##
   # Represents an event. Events follow the [Cloudevents](https://github.com/cloudevents)
@@ -56,6 +54,15 @@ module Polyn
     # @return [String] the data
     attr_reader :data
 
+    ##
+    # @return [Array] Previous events that led to this one
+    attr_reader :polyntrace
+
+    ##
+    # @return [Hash] Represents the information about the client that published the event
+    # as well as additional metadata
+    attr_reader :polyndata
+
     def initialize(hash)
       @specversion = hash.key?(:specversion) ? hash[:specversion] : "1.0"
 
@@ -64,11 +71,17 @@ module Polyn
       end
 
       @id              = hash.fetch(:id, SecureRandom.uuid)
-      @type            = hash.fetch(:type)
-      @source          = hash.fetch(:source)
+      @type            = self.class.full_type(hash.fetch(:type))
+      @source          = self.class.full_source(hash[:source])
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
-      @datacontenttype = hash[:datacontenttype]
+      @datacontenttype = hash.fetch(:datacontenttype, "application/json")
+      @polyntrace      = self.class.build_polyntrace(hash[:triggered_by])
+      @polyndata       = {
+        clientlang:        "ruby",
+        clientlangversion: RUBY_VERSION,
+        clientversion:     Polyn::VERSION,
+      }
     end
 
     def to_h
@@ -80,7 +93,46 @@ module Polyn
         "time"            => time,
         "data"            => Utils::Hash.deep_stringify_keys(data),
         "datacontenttype" => datacontenttype,
+        "polyntrace"      => Utils::Hash.deep_stringify_keys(polyntrace),
+        "polyndata"       => Utils::Hash.deep_stringify_keys(polyndata),
       }
+    end
+
+    ##
+    # Get the Event `source` prefixed with reverse domain name
+    def self.full_source(source = nil)
+      root = Polyn.configuration.source_root
+      name = Polyn::Naming.dot_to_colon("#{domain}:#{root}")
+
+      if source
+        Polyn::Naming.validate_source_name!(source)
+        "#{name}:#{Polyn::Naming.dot_to_colon(source)}"
+      else
+        name
+      end
+    end
+
+    ##
+    # Get the Event `type` prefixed with reverse domain name
+    def self.full_type(type)
+      Polyn::Naming.validate_event_type!(type)
+      "#{domain}.#{Polyn::Naming.trim_domain_prefix(type)}"
+    end
+
+    ##
+    # Use a triggering event to build the polyntrace of a new event
+    def self.build_polyntrace(triggered_by)
+      return [] unless triggered_by
+
+      triggered_by.polyntrace.concat([{
+        id:   triggered_by.id,
+        type: triggered_by.type,
+        time: triggered_by.time,
+      }])
+    end
+
+    def self.domain
+      Polyn.configuration.domain
     end
   end
 end

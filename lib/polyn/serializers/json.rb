@@ -17,90 +17,76 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-require "json"
-require "open-uri"
-require "json_schemer"
-
 module Polyn
   module Serializers
     ##
     # Handles serializing and deserializing data to and from JSON.
-    class Json < Base
-      DRAFT_URL   = "http://json-schema.org/draft-07/schema#"
-      SCHEMA_URL  = "https://raw.githubusercontent.com/cloudevents/spec/v1.0.1/spec.json"
-      FILE_SCHEME = "file"
-
-      REQUIRED_PROPERTIES = %w[
-        id
-        type
-        source
-        specversion
-        datacontenttype
-        time
-        data
-      ].freeze
-
-      def initialize(options = nil)
-        super
-        @schema_prefix     = options.fetch(:schema_prefix)
-        @cached_validators = {}
+    class Json
+      def self.serialize!(nats, event, **opts)
+        validate_event_instance!(event)
+        validate!(nats, event.to_h, **opts)
       end
 
-      def serialize(event)
-        event.datacontenttype = "application/json"
-
-        validate_event(event)
-
-        JSON.dump(event.to_h)
+      def self.validate!(nats, event, **opts)
+        validate_cloud_event!(event)
+        validate_data!(nats, event, **opts)
+        JSON.generate(event)
       end
 
-      def deserialize(data)
-        hash  = Utils::Hash.deep_symbolize_keys(JSON.parse(data))
-        event = Event.new(hash)
-
-        validate_event(event)
-
-        event
-      end
-
-      private
-
-      attr_reader :cached_validators, :schema_prefix
-
-      def validate_event(event)
-        puts schema_template(event)
-        schema = cached_validators[event.type] ||= JSONSchemer.schema(
-          schema_template(event),
-          ref_resolver: proc { |ref| resolve_ref(ref) },
-        )
-
-        validation = schema.validate(event.to_h)
-
-        raise Errors::ValidationError, validation.to_a if validation.any?
-      end
-
-      def schema_template(event)
-        {
-          "$schema"    => DRAFT_URL,
-          "$id"        => SCHEMA_URL,
-          "properties" => {
-            "datacontenttype" => {
-              "type" => "string",
-            },
-            "data"            => {
-              "$ref" => "#{schema_prefix}/#{event.type}.json",
-            },
-          },
-          "required"   => REQUIRED_PROPERTIES
-        }
-      end
-
-      def resolve_ref(ref)
-        if ref.scheme == FILE_SCHEME
-          JSON.parse(File.read(ref.path))
+      def self.validate_event_instance!(event)
+        if event.instance_of?(Polyn::Event)
+          event
         else
-          JSON.parse(Net::HTTP.get(ref))
+          raise Polyn::Errors::ValidationError,
+            "Can only serialize `Polyn::Event` instances. got #{event}"
         end
+      end
+
+      def self.validate_cloud_event!(event)
+        cloud_event_schema = Polyn::CloudEvent.to_h
+        validate_schema!(cloud_event_schema, event)
+      end
+
+      def self.validate_data!(nats, event, **opts)
+        type   = get_event_type!(event)
+        schema = get_schema!(nats, type, **opts)
+        validate_schema!(schema, event)
+      end
+
+      def self.validate_schema!(schema, event)
+        schema = JSONSchemer.schema(schema)
+        errors = schema.validate(event).to_a
+        errors = format_schema_errors(errors)
+        unless errors.empty?
+          raise Polyn::Errors::ValidationError, combined_error_message(event, errors)
+        end
+      end
+
+      def self.get_event_type!(event)
+        event["type"] || raise(Polyn::Errors::ValidationError,
+          "Could not find a `type` in message #{event.inspect} \nEvery event must have a `type`")
+        Polyn::Naming.trim_domain_prefix(event["type"])
+      end
+
+      def self.get_schema!(nats, type, **opts)
+        Polyn::SchemaStore.get(nats, type, name: store_name(**opts))
+      end
+
+      def self.format_schema_errors(errors)
+        errors.map do |error|
+          "Property: `#{error['data_pointer']}` - #{error['type']} - #{error['details']}"
+        end
+      end
+
+      def self.combined_error_message(event, errors)
+        [
+          "Polyn event #{event['id']} from #{event['source']} is not valid",
+          "Event data: #{event.inspect}",
+        ].concat(errors).join("\n")
+      end
+
+      def self.store_name(**opts)
+        opts.fetch(:store_name, Polyn::SchemaStore.store_name)
       end
     end
   end
