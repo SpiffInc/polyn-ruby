@@ -45,6 +45,14 @@ RSpec.describe Polyn::PullSubscriber do
       expect(msg.data.data[:a]).to eq(1)
       expect(msg.data.data[:b]).to eq(2)
     end
+
+    it "invalid message sends ACKTERM" do
+      # Publishing with vanilla nats instead of polyn
+      nats.publish("calc.add.v1", JSON.generate({ a: "1", b: "2" }))
+      expect do
+        subject.fetch
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
   end
 
   def add_schema(type, schema)

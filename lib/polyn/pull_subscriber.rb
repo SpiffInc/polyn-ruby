@@ -41,7 +41,12 @@ module Polyn
     def fetch(batch = 1, params = {})
       msgs = @psub.fetch(batch, params)
       msgs.map do |msg|
-        event    = Polyn::Serializers::Json.deserialize!(@nats, msg.data, store_name: @store_name)
+        event    = Polyn::Serializers::Json.deserialize(@nats, msg.data, store_name: @store_name)
+        if event.is_a?(Polyn::Errors::Error)
+          msg.term
+          raise event
+        end
+
         msg.data = event
         msg
       end
