@@ -82,8 +82,23 @@ module Polyn
 
     ##
     # Create a consumer name from a source and type
-    def self.consumer_name(_type, _source = nil)
+    def self.consumer_name(type, source = nil)
+      validate_event_type!(type)
+      type = trim_domain_prefix(type)
+      type = dot_to_underscore(type)
+
       root = Polyn.configuration.source_root
+      root = dot_to_underscore(root)
+      root = colon_to_underscore(root)
+
+      if source
+        validate_source_name!(source)
+        source = dot_to_underscore(source)
+        source = colon_to_underscore(source)
+        [root, source, type].join("_")
+      else
+        [root, type].join("_")
+      end
     end
 
     def self.domain
