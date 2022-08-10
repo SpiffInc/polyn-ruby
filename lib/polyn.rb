@@ -83,7 +83,7 @@ module Polyn
     nats.jetstream.consumer_info(stream, consumer_name)
   rescue NATS::JetStream::Error::NotFound
     raise Polyn::Errors::ValidationError,
-      "Consumer #{consumer_name} does not exist. Use polyn-cli to create"\
+      "Consumer #{consumer_name} does not exist. Use polyn-cli to create "\
       "it before attempting to subscribe"
   end
 
