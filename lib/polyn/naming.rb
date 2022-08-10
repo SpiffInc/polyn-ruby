@@ -10,6 +10,14 @@ module Polyn
       str.gsub(".", ":")
     end
 
+    def self.dot_to_underscore(name)
+      name.gsub(".", "_")
+    end
+
+    def self.colon_to_underscore(name)
+      name.gsub(":", "_")
+    end
+
     ##
     # Validate that the configured `domain` is in the correct format
     def self.validate_domain_name!(name)
@@ -70,6 +78,12 @@ module Polyn
     def self.trim_domain_prefix(str)
       str = str.sub("#{domain}.", "")
       str.sub("#{dot_to_colon(domain)}:", "")
+    end
+
+    ##
+    # Create a consumer name from a source and type
+    def self.consumer_name(_type, _source = nil)
+      root = Polyn.configuration.source_root
     end
 
     def self.domain

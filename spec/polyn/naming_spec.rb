@@ -9,6 +9,18 @@ RSpec.describe Polyn::Naming do
     end
   end
 
+  describe "#dot_to_underscore" do
+    it "turns dot to underscore" do
+      expect(described_class.dot_to_underscore("foo.bar.baz")).to eq("foo_bar_baz")
+    end
+  end
+
+  describe "#colon_to_underscore" do
+    it "turns colon to underscore" do
+      expect(described_class.colon_to_underscore("foo:bar:baz")).to eq("foo_bar_baz")
+    end
+  end
+
   describe "#validate_domain_name!!" do
     it "valid name that's alphanumeric and dot separated passes" do
       expect { described_class.validate_domain_name!("com.test") }.to_not raise_error
