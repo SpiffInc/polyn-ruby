@@ -27,6 +27,20 @@ module Polyn
         validate!(nats, event.to_h, **opts)
       end
 
+      def self.deserialize!(nats, json, **opts)
+        data = decode!(json)
+        validate!(nats, data, **opts)
+        data = Polyn::Utils::Hash.deep_symbolize_keys(data)
+        Event.new(data)
+      end
+
+      def self.decode!(json)
+        JSON.parse(json)
+      rescue JSON::ParserError
+        raise Polyn::Errors::ValidationError,
+          "Polyn was unable to decode the following message: \n#{json}"
+      end
+
       def self.validate!(nats, event, **opts)
         validate_cloud_event!(event)
         validate_data!(nats, event, **opts)
