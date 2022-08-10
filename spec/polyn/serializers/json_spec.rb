@@ -79,11 +79,14 @@ RSpec.describe Polyn::Serializers::Json do
   describe "#deserialize!" do
     it "deserializes valid event" do
       add_schema("calc.mult.v1", {
-        "data" => {
-          "type"       => "object",
-          "properties" => {
-            "a" => { "type" => "integer" },
-            "b" => { "type" => "integer" },
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
           },
         },
       })
@@ -109,6 +112,73 @@ RSpec.describe Polyn::Serializers::Json do
     it "raises if json not parseable" do
       expect do
         described_class.deserialize!(nats, "foo", store_name: store_name)
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "it raises if no schema exists" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      json = JSON.generate({
+        id:          "foo",
+        specversion: "1.0",
+        type:        "com.test.foo.bar",
+        source:      "calculation.engine",
+        data:        {
+          a: 1,
+          b: 2,
+        },
+      })
+
+      expect do
+        described_class.deserialize!(nats, json, store_name: store_name)
+      end.to raise_error(Polyn::Errors::SchemaError)
+    end
+
+    it "it raises if doesn't match schema" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      json = JSON.generate({
+        id:          "foo",
+        specversion: "1.0",
+        type:        "com.test.calc.mult.v1",
+        source:      "calculation.engine",
+        data:        {
+          a: nil,
+          b: "2",
+        },
+      })
+
+      expect do
+        described_class.deserialize!(nats, json, store_name: store_name)
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "raises if event is not a valid cloud event" do
+      expect do
+        described_class.deserialize!(nats,
+          JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }), store_name: store_name)
       end.to raise_error(Polyn::Errors::ValidationError)
     end
   end
