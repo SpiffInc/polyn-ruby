@@ -86,6 +86,29 @@ Polyn.publish(nats, "user.created.v1", { name: "Mary" }, triggered_by: event)
 
 You can also include options of `:header` and/or `:reply_to` to passthrough to NATS
 
+### Consuming a Stream
+
+```ruby
+require "nats/client"
+require "polyn"
+
+nats = NATS.connect
+
+psub = Polyn.pull_subscribe(nats, "user.created.v1")
+
+loop do
+  msgs = psub.fetch(5)
+  msgs.each do |msg|
+    msg.ack
+  end
+end
+```
+
+Polyn assumes you've already used [Polyn CLI](https://github.com/SpiffInc/polyn-cli) to generate a consumer.
+
+Add the `:source` option to `pull_subscribe` if your consumer name includes more than just the `source_root`. Polyn automatically finds the consumer name from the `type` you pass in.
+If your `source_root` was `user.backend` and the event type was `user.created.v1` it would look for a consumer named `user_backend_user_created_v1`. If your consumer had a more specific destination such as `notifications` you could pass that as the `:source` option and the consumer name lookup would use `user_backend_notifications_user_created_v1`.
+
 
 ## Development
 
