@@ -31,6 +31,7 @@ require "polyn/errors/errors"
 require "polyn/event"
 require "polyn/exception_handlers"
 require "polyn/naming"
+require "polyn/pull_subscriber"
 require "polyn/schema_store"
 require "polyn/serializers/json"
 require "polyn/utils/utils"
@@ -61,6 +62,29 @@ module Polyn
     json = Polyn::Serializers::Json.serialize!(nats, event, **opts)
 
     nats.publish(type, json, opts[:reply_to], header: opts[:header])
+  end
+
+  ##
+  # Subscribe to a pull consumer that already exists in the NATS server
+  #
+  # @param nats [Object] Connected NATS instance from `NATS.connect`
+  # @param type [String] The type of event
+  # @option options [String] :source - If the `source` portion of the consumer name
+  # is more than the `source_root`
+  def self.pull_subscribe(nats, type, **opts)
+    Polyn::PullSubscriber.new({ nats: nats, type: type, source: opts[:source] })
+  end
+
+  # nats-pure will create a consumer if the one you passed does not exist.
+  # Polyn wants to avoid this functionality and instead encourage
+  # consumer creation in the centralized `events` codebase so that
+  # it's documented, discoverable, and polyn-cli can manage it
+  def self.validate_consumer_exists!(nats, stream, consumer_name)
+    nats.jetstream.consumer_info(stream, consumer_name)
+  rescue NATS::JetStream::Error::NotFound
+    raise Polyn::Errors::ValidationError,
+      "Consumer #{consumer_name} does not exist. Use polyn-cli to create"\
+      "it before attempting to subscribe"
   end
 
   ##
