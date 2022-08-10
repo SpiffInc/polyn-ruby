@@ -29,8 +29,11 @@ module Polyn
       #
       # @return [::Hash] The symbolized hash.
       def self.deep_symbolize_keys(hash)
+        return hash.map { |item| deep_symbolize_keys(item) } if hash.is_a?(::Array)
+        return hash unless hash.is_a?(::Hash)
+
         hash.each_with_object({}) do |(key, value), result|
-          result[key.to_sym] = value.is_a?(::Hash) ? deep_symbolize_keys(value) : value
+          result[key.to_sym] = deep_symbolize_keys(value)
         end
       end
 
