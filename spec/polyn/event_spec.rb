@@ -30,7 +30,19 @@ RSpec.describe Polyn::Event do
 
   describe "#specversion" do
     it "returns the default specversion" do
-      expect(subject.specversion).to eq("1.0")
+      expect(subject.specversion).to eq(Polyn::Event::CLOUD_EVENT_VERSION)
+    end
+
+    it "accepts non-breaking versions" do
+      event = Polyn::Event.new(
+        type:        "test.event",
+        source:      "test.service",
+        specversion: "1.1.0",
+        data:        {
+          foo: "bar",
+        },
+      )
+      expect(event.specversion).to eq("1.1.0")
     end
 
     context "invalid version" do
