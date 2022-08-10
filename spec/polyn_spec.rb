@@ -117,6 +117,12 @@ RSpec.describe Polyn do
         Polyn.pull_subscribe(nats, "calc.mult.v1", source: "foo bar")
       end.to raise_error(Polyn::Errors::ValidationError)
     end
+
+    it "gives PullSubscriber instance if successful" do
+      js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
+      js.add_consumer("CALC", durable_name: "user_backend_calc_mult_v1")
+      expect(Polyn.pull_subscribe(nats, "calc.mult.v1")).to be_a(Polyn::PullSubscriber)
+    end
   end
 
   def add_schema(type, schema)

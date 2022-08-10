@@ -16,7 +16,7 @@ module Polyn
       @consumer_name = Polyn::Naming.consumer_name(@type, fields[:source])
       @stream        = @nats.jetstream.find_stream_name_by_subject(@type)
       self.class.validate_consumer_exists!(@nats, @stream, @consumer_name)
-      @psub          = @nats.pull_subscribe(@type, @consumer_name)
+      @psub          = @nats.jetstream.pull_subscribe(@type, @consumer_name)
     end
 
     # nats-pure will create a consumer if the one you passed does not exist.
