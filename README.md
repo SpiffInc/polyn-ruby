@@ -86,53 +86,6 @@ Polyn.publish(nats, "user.created.v1", { name: "Mary" }, triggered_by: event)
 
 You can also include options of `:header` and/or `:reply_to` to passthrough to NATS
 
-## Services
-
-Services are built by sublcassing the `Polyn::Service` class. An example email service
-would look like:
-
-```ruby
-class EmailService < Polyn::Service
-  event "user.added", :send_welcome_email
-  event "user.updated", :send_update_email
-
-
-  def send_update_email(context)
-    user = User.where(context.params.user_id)
-    UserMailer.with(user: user).update_email.deliver_now
-
-    context.acknowledge
-  end
-
-  def send_welcome_email(context)
-    user = User.where(context.params.user_id)
-    UserMailer.with(user: user).welcome_email.deliver_now
-
-    context.acknowledge
-  end
-end
-```
-
-Now lets look at what happens when a user is added:
-
-```ruby
-class User < ApplicationRecord
-  after_create :publish_user_created
-  after_update :publish_user_updated
-
-
-  private
-
-  def publish_user_created
-    Polyn.publish("user.created", user.as_json)
-  end
-
-  def publish_user_updated
-    Polyn.publish("user.updated", user.as_json)
-  end
-end
-```
-
 
 ## Development
 
