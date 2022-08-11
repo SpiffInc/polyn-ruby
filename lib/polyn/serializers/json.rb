@@ -129,7 +129,8 @@ module Polyn
       end
 
       def self.store_name(**opts)
-        opts.fetch(:store_name, Polyn::SchemaStore.store_name)
+        name = opts.fetch(:store_name, Polyn::SchemaStore.store_name)
+        name || Polyn::SchemaStore.store_name
       end
     end
   end
