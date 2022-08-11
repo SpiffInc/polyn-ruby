@@ -10,14 +10,6 @@ module Polyn
       str.gsub(".", ":")
     end
 
-    def self.dot_to_underscore(name)
-      name.gsub(".", "_")
-    end
-
-    def self.colon_to_underscore(name)
-      name.gsub(":", "_")
-    end
-
     ##
     # Validate that the configured `domain` is in the correct format
     def self.validate_domain_name!(name)
@@ -85,16 +77,16 @@ module Polyn
     def self.consumer_name(type, source = nil)
       validate_event_type!(type)
       type = trim_domain_prefix(type)
-      type = dot_to_underscore(type)
+      type = type.gsub(".", "_")
 
       root = Polyn.configuration.source_root
-      root = dot_to_underscore(root)
-      root = colon_to_underscore(root)
+      root = root.gsub(".", "_")
+      root = root.gsub(":", "_")
 
       if source
         validate_source_name!(source)
-        source = dot_to_underscore(source)
-        source = colon_to_underscore(source)
+        source = source.gsub(".", "_")
+        source = source.gsub(":", "_")
         [root, source, type].join("_")
       else
         [root, type].join("_")
