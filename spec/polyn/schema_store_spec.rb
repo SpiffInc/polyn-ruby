@@ -23,6 +23,27 @@ RSpec.describe Polyn::SchemaStore do
     end
   end
 
+  describe "#get!" do
+    it "gets a schema from the store" do
+      described_class.save(nats, "foo.bar.v1", { "foo" => "bar" }, name: store_name)
+      expect(described_class.get!(nats, "foo.bar.v1", name: store_name)).to eq("{\"foo\":\"bar\"}")
+    end
+
+    it "error if store does not exist" do
+      expect do
+        described_class.get!(nats, "foo.bar.v1",
+          name: "BAD_STORE")
+      end.to raise_error(Polyn::Errors::SchemaError)
+    end
+
+    it "error if schema does not exist" do
+      expect do
+        described_class.get!(nats, "foo.bar.v1",
+          name: store_name)
+      end.to raise_error(Polyn::Errors::SchemaError)
+    end
+  end
+
   describe "#get" do
     it "gets a schema from the store" do
       described_class.save(nats, "foo.bar.v1", { "foo" => "bar" }, name: store_name)
@@ -30,17 +51,16 @@ RSpec.describe Polyn::SchemaStore do
     end
 
     it "error if store does not exist" do
-      expect do
-        described_class.get(nats, "foo.bar.v1",
-          name: "BAD_STORE")
-      end.to raise_error(Polyn::Errors::SchemaError)
+      error = described_class.get(nats, "foo.bar.v1",
+        name: "BAD_STORE")
+
+      expect(error).to be_a(Polyn::Errors::SchemaError)
     end
 
     it "error if schema does not exist" do
-      expect do
-        described_class.get(nats, "foo.bar.v1",
-          name: store_name)
-      end.to raise_error(Polyn::Errors::SchemaError)
+      error = described_class.get(nats, "foo.bar.v1",
+        name: store_name)
+      expect(error).to be_a(Polyn::Errors::SchemaError)
     end
   end
 end

@@ -76,6 +76,153 @@ RSpec.describe Polyn::Serializers::Json do
     end
   end
 
+  describe "#deserialize!" do
+    it "deserializes valid event" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      json = JSON.generate({
+        id:          "foo",
+        specversion: "1.0",
+        type:        "com.test.calc.mult.v1",
+        source:      "calculation.engine",
+        data:        {
+          a: 1,
+          b: 2,
+        },
+      })
+
+      event = described_class.deserialize!(nats, json, store_name: store_name)
+
+      expect(event.data[:a]).to eq(1)
+      expect(event.data[:b]).to eq(2)
+      expect(event.type).to eq("com.test.calc.mult.v1")
+    end
+
+    it "raises if json not parseable" do
+      expect do
+        described_class.deserialize!(nats, "foo", store_name: store_name)
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "it raises if no schema exists" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      json = JSON.generate({
+        id:          "foo",
+        specversion: "1.0",
+        type:        "com.test.foo.bar",
+        source:      "calculation.engine",
+        data:        {
+          a: 1,
+          b: 2,
+        },
+      })
+
+      expect do
+        described_class.deserialize!(nats, json, store_name: store_name)
+      end.to raise_error(Polyn::Errors::SchemaError)
+    end
+
+    it "it raises if doesn't match schema" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      json = JSON.generate({
+        id:          "foo",
+        specversion: "1.0",
+        type:        "com.test.calc.mult.v1",
+        source:      "calculation.engine",
+        data:        {
+          a: nil,
+          b: "2",
+        },
+      })
+
+      expect do
+        described_class.deserialize!(nats, json, store_name: store_name)
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "raises if event is not a valid cloud event" do
+      expect do
+        described_class.deserialize!(nats,
+          JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }), store_name: store_name)
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+  end
+
+  describe "#deserialize" do
+    it "deserializes valid event" do
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      json = JSON.generate({
+        id:          "foo",
+        specversion: "1.0",
+        type:        "com.test.calc.mult.v1",
+        source:      "calculation.engine",
+        data:        {
+          a: 1,
+          b: 2,
+        },
+      })
+
+      event = described_class.deserialize(nats, json, store_name: store_name)
+
+      expect(event.data[:a]).to eq(1)
+      expect(event.data[:b]).to eq(2)
+      expect(event.type).to eq("com.test.calc.mult.v1")
+    end
+
+    it "gives error message if invalid" do
+      errors = described_class.deserialize(nats,
+        JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }), store_name: store_name)
+      expect(errors).to be_a(Polyn::Errors::ValidationError)
+    end
+  end
+
   def add_schema(type, schema)
     Polyn::SchemaStore.save(nats, type, schema, name: store_name)
   end

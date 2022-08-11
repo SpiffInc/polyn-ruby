@@ -72,6 +72,27 @@ module Polyn
       str.sub("#{dot_to_colon(domain)}:", "")
     end
 
+    ##
+    # Create a consumer name from a source and type
+    def self.consumer_name(type, source = nil)
+      validate_event_type!(type)
+      type = trim_domain_prefix(type)
+      type = type.gsub(".", "_")
+
+      root = Polyn.configuration.source_root
+      root = root.gsub(".", "_")
+      root = root.gsub(":", "_")
+
+      if source
+        validate_source_name!(source)
+        source = source.gsub(".", "_")
+        source = source.gsub(":", "_")
+        [root, source, type].join("_")
+      else
+        [root, type].join("_")
+      end
+    end
+
     def self.domain
       Polyn.configuration.domain
     end

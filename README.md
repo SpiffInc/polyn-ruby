@@ -86,52 +86,28 @@ Polyn.publish(nats, "user.created.v1", { name: "Mary" }, triggered_by: event)
 
 You can also include options of `:header` and/or `:reply_to` to passthrough to NATS
 
-## Services
-
-Services are built by sublcassing the `Polyn::Service` class. An example email service
-would look like:
+### Consuming a Stream
 
 ```ruby
-class EmailService < Polyn::Service
-  event "user.added", :send_welcome_email
-  event "user.updated", :send_update_email
+require "nats/client"
+require "polyn"
 
+nats = NATS.connect
 
-  def send_update_email(context)
-    user = User.where(context.params.user_id)
-    UserMailer.with(user: user).update_email.deliver_now
+psub = Polyn.pull_subscribe(nats, "user.created.v1")
 
-    context.acknowledge
-  end
-
-  def send_welcome_email(context)
-    user = User.where(context.params.user_id)
-    UserMailer.with(user: user).welcome_email.deliver_now
-
-    context.acknowledge
+loop do
+  msgs = psub.fetch(5)
+  msgs.each do |msg|
+    msg.ack
   end
 end
 ```
 
-Now lets look at what happens when a user is added:
+Polyn assumes you've already used [Polyn CLI](https://github.com/SpiffInc/polyn-cli) to generate a consumer.
 
-```ruby
-class User < ApplicationRecord
-  after_create :publish_user_created
-  after_update :publish_user_updated
-
-
-  private
-
-  def publish_user_created
-    Polyn.publish("user.created", user.as_json)
-  end
-
-  def publish_user_updated
-    Polyn.publish("user.updated", user.as_json)
-  end
-end
-```
+Add the `:source` option to `pull_subscribe` if your consumer name includes more than just the `source_root`. Polyn automatically finds the consumer name from the `type` you pass in.
+If your `source_root` was `user.backend` and the event type was `user.created.v1` it would look for a consumer named `user_backend_user_created_v1`. If your consumer had a more specific destination such as `notifications` you could pass that as the `:source` option and the consumer name lookup would use `user_backend_notifications_user_created_v1`.
 
 
 ## Development

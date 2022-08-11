@@ -270,4 +270,37 @@ RSpec.describe Polyn::Naming do
            )
     end
   end
+
+  describe "#consumer_name" do
+    it "raises if event type is invalid" do
+      expect do
+        described_class.consumer_name("foo bar")
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "raises if optional source is invalid" do
+      expect do
+        described_class.consumer_name("foo.bar", "my source")
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "uses source_root by default" do
+      expect(described_class.consumer_name("foo.bar.v1")).to eq("user_backend_foo_bar_v1")
+    end
+
+    it "takes optional source" do
+      expect(described_class.consumer_name("foo.bar.v1",
+        "my.source")).to eq("user_backend_my_source_foo_bar_v1")
+    end
+
+    it "takes colon separated source" do
+      expect(described_class.consumer_name("foo.bar.v1",
+        "my:source")).to eq("user_backend_my_source_foo_bar_v1")
+    end
+
+    it "takes domain prefixed type" do
+      expect(described_class.consumer_name("com.test.foo.bar.v1",
+        "my:source")).to eq("user_backend_my_source_foo_bar_v1")
+    end
+  end
 end

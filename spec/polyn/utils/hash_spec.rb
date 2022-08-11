@@ -31,6 +31,27 @@ RSpec.describe Polyn::Utils::Hash do
         },
       })
     end
+
+    let(:hash) { { "a" => { "b" => { "c" => 1 } } } }
+    it "should deep symbolize keys in lists" do
+      hash = { "a" => { "b" => [{ "c" => 1 }, { "d" => 2 }] } }
+      expect(described_class.deep_symbolize_keys(hash)).to eq({
+        a: {
+          b: [{
+            c: 1,
+          }, { d: 2 }],
+        },
+      })
+    end
+
+    it "can deep symbolize an array" do
+      arr = [{ a: "b" }, { c: "d" }]
+      expect(described_class.deep_symbolize_keys(arr)).to eq([{ a: "b" }, { c: "d" }])
+    end
+
+    it "should return if not a hash" do
+      expect(described_class.deep_symbolize_keys("foo")).to eq("foo")
+    end
   end
 
   describe "#deep_stringify_keys" do

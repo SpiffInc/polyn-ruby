@@ -66,7 +66,7 @@ module Polyn
     def initialize(hash)
       @specversion = hash.key?(:specversion) ? hash[:specversion] : "1.0"
 
-      if @specversion != CLOUD_EVENT_VERSION
+      unless Gem::Dependency.new("", "~> #{CLOUD_EVENT_VERSION}").match?("", @specversion)
         raise UnsupportedVersionError, "Unsupported version: '#{hash[:specversion]}'"
       end
 

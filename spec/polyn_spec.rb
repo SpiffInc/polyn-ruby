@@ -95,6 +95,36 @@ RSpec.describe Polyn do
     end
   end
 
+  describe "#pull_subscribe" do
+    it "raises if type is invalid" do
+      js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
+      js.add_consumer("CALC", durable_name: "user_backend_calc_mult_v1")
+      expect do
+        Polyn.pull_subscribe(nats, "calc mult v1")
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "raises if optional source invalid" do
+      js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
+      js.add_consumer("CALC", durable_name: "user_backend_foo_bar_calc_mult_v1")
+      expect do
+        Polyn.pull_subscribe(nats, "calc.mult.v1", source: "foo bar")
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "raises if consumer was not created in NATS" do
+      expect do
+        Polyn.pull_subscribe(nats, "calc.mult.v1", source: "foo bar")
+      end.to raise_error(Polyn::Errors::ValidationError)
+    end
+
+    it "gives PullSubscriber instance if successful" do
+      js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
+      js.add_consumer("CALC", durable_name: "user_backend_calc_mult_v1")
+      expect(Polyn.pull_subscribe(nats, "calc.mult.v1")).to be_a(Polyn::PullSubscriber)
+    end
+  end
+
   def add_schema(type, schema)
     Polyn::SchemaStore.save(nats, type, schema, name: store_name)
   end
