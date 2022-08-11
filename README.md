@@ -109,6 +109,31 @@ Polyn assumes you've already used [Polyn CLI](https://github.com/SpiffInc/polyn-
 Add the `:source` option to `pull_subscribe` if your consumer name includes more than just the `source_root`. Polyn automatically finds the consumer name from the `type` you pass in.
 If your `source_root` was `user.backend` and the event type was `user.created.v1` it would look for a consumer named `user_backend_user_created_v1`. If your consumer had a more specific destination such as `notifications` you could pass that as the `:source` option and the consumer name lookup would use `user_backend_notifications_user_created_v1`.
 
+### Subscribing to a message
+
+```ruby
+require "nats/client"
+require "polyn"
+
+nats = NATS.connect
+
+sub = Polyn.subscribe(nats, "user.created.v1") { |msg| puts msg.data }
+```
+
+`Polyn.subscribe` will process the block you pass it asynchronously in a separate thread
+
+#### Errors
+
+For most methods, `Polyn` will raise if there is a validation problem. The `subscribe` method from `nats-pure` handles the callback in a separate thread and rescues any errors in an attempt to reconnect. If you want to get Polyn errors handled for `subscribe` you need to call `nats.on_error { |e| raise e }` on your connection instance to tell `nats-pure` how to handle those errors.
+
+```ruby
+require "nats/client"
+
+nats = NATS.connect
+nats.on_error { |e| raise e }
+
+sub = Polyn.subscribe(nats, "user.created.v1") { |msg| puts msg.data }
+```
 
 ## Development
 

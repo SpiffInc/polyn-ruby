@@ -125,6 +125,43 @@ RSpec.describe Polyn do
     end
   end
 
+  describe "#subscribe" do
+    it "turns msg data into an event" do
+      mon  = Monitor.new
+      done = mon.new_cond
+
+      add_schema("calc.mult.v1", {
+        "type"       => "object",
+        "properties" => {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      })
+
+      msgs = []
+      Polyn.subscribe(nats, "calc.mult.v1", store_name: store_name) do |msg|
+        msgs << msg
+        mon.synchronize do
+          done.signal
+        end
+      end
+
+      Polyn.publish(nats, "calc.mult.v1", { a: 1, b: 2 }, store_name: store_name)
+
+      mon.synchronize { done.wait(1) }
+
+      expect(msgs.count).to eq(1)
+      expect(msgs[0].data).to be_a(Polyn::Event)
+      expect(msgs[0].data.data[:a]).to eq(1)
+      expect(msgs[0].data.data[:b]).to eq(2)
+    end
+  end
+
   def add_schema(type, schema)
     Polyn::SchemaStore.save(nats, type, schema, name: store_name)
   end
