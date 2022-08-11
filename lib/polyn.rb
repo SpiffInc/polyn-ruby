@@ -64,6 +64,24 @@ module Polyn
     nats.publish(type, json, opts[:reply_to], header: opts[:header])
   end
 
+  ## Create subscription which is dispatched asynchronously
+  # and sends messages to a callback.
+  #
+  # @param nats [Object] Connected NATS instance from `NATS.connect`
+  # @param type [String] The type of event
+  # @option options [String] :queue - Queue group to add subscriber to
+  # @option options [String] :max - Max msgs before unsubscribing
+  # @option options [String] :pending_msgs_limit
+  # @option options [String] :pending_bytes_limit
+  def self.subscribe(nats, type, opts = {}, &callback)
+    nats.subscribe(type, opts) do |msg|
+      event    = Polyn::Serializers::Json.deserialize!(nats, msg.data,
+        store_name: opts[:store_name])
+      msg.data = event
+      callback.call(msg)
+    end
+  end
+
   ##
   # Subscribe to a pull consumer that already exists in the NATS server
   #
