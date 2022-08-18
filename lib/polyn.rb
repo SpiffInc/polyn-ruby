@@ -18,18 +18,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Loading all our classes up front
-require "concurrent/actor"
 require "json_schemer"
 require "json"
 require "nats/client"
 require "securerandom"
-require "semantic_logger"
 
 require "polyn/configuration"
 require "polyn/cloud_event"
 require "polyn/errors/errors"
 require "polyn/event"
-require "polyn/exception_handlers"
 require "polyn/naming"
 require "polyn/pull_subscriber"
 require "polyn/schema_store"
