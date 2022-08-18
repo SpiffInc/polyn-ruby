@@ -22,8 +22,8 @@ require_relative "lib/polyn/version"
 Gem::Specification.new do |spec|
   spec.name          = "polyn"
   spec.version       = Polyn::VERSION
-  spec.authors       = ["Jarod"]
-  spec.email         = ["jarod.reid@spiff.com"]
+  spec.authors       = ["Jarod", "Brandyn Bennett"]
+  spec.email         = ["jarod.reid@spiff.com", "brandyn.bennett@spiff.com"]
 
   spec.summary       = "Polyn Service Framework"
   spec.description   = "A lightweight reactive microservice framework."
@@ -46,9 +46,7 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "addressable",          "~> 2.8.0"
-  spec.add_dependency "json-schema",          "~> 2.8.1"
-  spec.add_dependency "concurrent-ruby-edge", "~> 0.6.0"
-  spec.add_dependency "semantic_logger",      "~> 4.8"
-  spec.add_dependency "yard",                 "~> 0.9"
+  spec.add_dependency "json_schemer", "~> 0.2"
+  spec.add_dependency "nats-pure", "~> 2.0"
+  spec.add_dependency "yard", "~> 0.9"
 end
