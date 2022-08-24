@@ -74,6 +74,17 @@ RSpec.describe Polyn do
                                         ])
     end
 
+    it "always includes a Nats-Msg-Id header" do
+      Polyn.publish(nats, "calc.mult.v1", {
+        a: 1,
+        b: 2,
+      }, store_name: store_name, reply_to: "foo")
+
+      msg = get_message("calc.mult.v1", "my_consumer", "CALC")
+
+      expect(msg.header).to eq({ "Nats-Msg-Id" => JSON.parse(msg.data)["id"] })
+    end
+
     it "can include a header" do
       Polyn.publish(nats, "calc.mult.v1", {
         a: 1,
@@ -82,7 +93,7 @@ RSpec.describe Polyn do
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
 
-      expect(msg.header).to eq({ "a header key" => "a header value" })
+      expect(msg.header).to eq({ "Nats-Msg-Id" => JSON.parse(msg.data)["id"], "a header key" => "a header value" })
     end
 
     it "raises if msg doesn't conform to schema" do

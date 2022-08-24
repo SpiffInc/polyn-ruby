@@ -56,9 +56,15 @@ module Polyn
       triggered_by: opts[:triggered_by],
     })
 
+    # Ensure accidental message duplication doesn't happen
+    # https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication
+    msg_id_header = { "Nats-Msg-Id" => event.id}
+    header = opts.fetch(:header, {})
+    header = msg_id_header.merge(header)
+
     json = Polyn::Serializers::Json.serialize!(nats, event, **opts)
 
-    nats.publish(type, json, opts[:reply_to], header: opts[:header])
+    nats.publish(type, json, opts[:reply_to], header: header)
   end
 
   ## Create subscription which is dispatched asynchronously
