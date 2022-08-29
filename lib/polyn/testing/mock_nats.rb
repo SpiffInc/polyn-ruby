@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
 require "nats/io/msg"
+require "polyn/testing/mock_jetstream"
 
 module Polyn
   class Testing
+    ##
+    # Mock Nats connection for applications to use in testing
     class MockNats
       def initialize(_nats)
         @messages    = Queue.new
@@ -19,6 +22,10 @@ module Polyn
 
       def subscribe(subject, _opts = {}, &callback)
         @subscribers << { subject: subject, callback: callback }
+      end
+
+      def jetstream
+        @jetstream ||= MockJetStream.new
       end
 
       private
