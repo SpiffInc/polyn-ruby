@@ -5,7 +5,7 @@ require "nats/io/msg"
 module Polyn
   class Testing
     class MockNats
-      def initialize
+      def initialize(_nats)
         @messages    = Queue.new
         @subscribers = []
       end

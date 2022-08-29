@@ -28,6 +28,8 @@ require "polyn/cloud_event"
 require "polyn/errors/errors"
 require "polyn/event"
 require "polyn/naming"
+require "polyn/nats/nats"
+require "polyn/nats/jetstream"
 require "polyn/pull_subscriber"
 require "polyn/schema_store"
 require "polyn/serializers/json"
@@ -58,13 +60,13 @@ module Polyn
 
     # Ensure accidental message duplication doesn't happen
     # https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication
-    msg_id_header = { "Nats-Msg-Id" => event.id}
-    header = opts.fetch(:header, {})
-    header = msg_id_header.merge(header)
+    msg_id_header = { "Nats-Msg-Id" => event.id }
+    header        = opts.fetch(:header, {})
+    header        = msg_id_header.merge(header)
 
     json = Polyn::Serializers::Json.serialize!(nats, event, **opts)
 
-    nats.publish(type, json, opts[:reply_to], header: header)
+    nats_class.new(nats).publish(type, json, opts[:reply_to], header: header)
   end
 
   ## Create subscription which is dispatched asynchronously
@@ -77,7 +79,7 @@ module Polyn
   # @option options [String] :pending_msgs_limit
   # @option options [String] :pending_bytes_limit
   def self.subscribe(nats, type, opts = {}, &callback)
-    nats.subscribe(type, opts) do |msg|
+    nats_class.new(nats).subscribe(type, opts) do |msg|
       event    = Polyn::Serializers::Json.deserialize!(nats, msg.data,
         store_name: opts[:store_name])
       msg.data = event
@@ -93,19 +95,7 @@ module Polyn
   # @option options [String] :source - If the `source` portion of the consumer name
   # is more than the `source_root`
   def self.pull_subscribe(nats, type, **opts)
-    Polyn::PullSubscriber.new({ nats: nats, type: type, source: opts[:source] })
-  end
-
-  # nats-pure will create a consumer if the one you passed does not exist.
-  # Polyn wants to avoid this functionality and instead encourage
-  # consumer creation in the centralized `events` codebase so that
-  # it's documented, discoverable, and polyn-cli can manage it
-  def self.validate_consumer_exists!(nats, stream, consumer_name)
-    nats.jetstream.consumer_info(stream, consumer_name)
-  rescue NATS::JetStream::Error::NotFound
-    raise Polyn::Errors::ValidationError,
-      "Consumer #{consumer_name} does not exist. Use polyn-cli to create "\
-      "it before attempting to subscribe"
+    Polyn::PullSubscriber.new({ nats: nats_class.new(nats), type: type, source: opts[:source] })
   end
 
   ##
@@ -118,5 +108,13 @@ module Polyn
   # Configuration block to configure Polyn
   def self.configure
     yield(configuration)
+  end
+
+  def self.nats_class
+    if configuration.polyn_env == "test"
+      Polyn::MockNats
+    else
+      Polyn::Nats
+    end
   end
 end
