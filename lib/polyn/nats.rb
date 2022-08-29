@@ -17,7 +17,7 @@ module Polyn
     end
 
     def jetstream
-      @jetstream ||= Polyn::JetStream.new(@nats.jetstream)
+      @jetstream ||= @nats.jetstream
     end
   end
 end

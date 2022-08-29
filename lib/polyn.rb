@@ -28,8 +28,7 @@ require "polyn/cloud_event"
 require "polyn/errors/errors"
 require "polyn/event"
 require "polyn/naming"
-require "polyn/nats/nats"
-require "polyn/nats/jetstream"
+require "polyn/nats"
 require "polyn/pull_subscriber"
 require "polyn/schema_store"
 require "polyn/serializers/json"
@@ -66,7 +65,7 @@ module Polyn
 
     json = Polyn::Serializers::Json.serialize!(nats, event, **opts)
 
-    nats_class.new(nats).publish(type, json, opts[:reply_to], header: header)
+    conn(nats).publish(type, json, opts[:reply_to], header: header)
   end
 
   ## Create subscription which is dispatched asynchronously
@@ -79,7 +78,7 @@ module Polyn
   # @option options [String] :pending_msgs_limit
   # @option options [String] :pending_bytes_limit
   def self.subscribe(nats, type, opts = {}, &callback)
-    nats_class.new(nats).subscribe(type, opts) do |msg|
+    conn(nats).subscribe(type, opts) do |msg|
       event    = Polyn::Serializers::Json.deserialize!(nats, msg.data,
         store_name: opts[:store_name])
       msg.data = event
@@ -95,7 +94,7 @@ module Polyn
   # @option options [String] :source - If the `source` portion of the consumer name
   # is more than the `source_root`
   def self.pull_subscribe(nats, type, **opts)
-    Polyn::PullSubscriber.new({ nats: nats_class.new(nats), type: type, source: opts[:source] })
+    Polyn::PullSubscriber.new({ nats: conn(nats), type: type, source: opts[:source] })
   end
 
   ##
@@ -110,11 +109,11 @@ module Polyn
     yield(configuration)
   end
 
-  def self.nats_class
+  def self.conn(nats)
     if configuration.polyn_env == "test"
-      Polyn::MockNats
+      Thread.current[:polyn_conn]
     else
-      Polyn::Nats
+      Polyn::Nats.new(nats)
     end
   end
 end

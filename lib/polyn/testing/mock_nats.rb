@@ -8,7 +8,7 @@ module Polyn
     ##
     # Mock Nats connection for applications to use in testing
     class MockNats
-      def initialize(_nats)
+      def initialize()
         @messages    = Queue.new
         @subscribers = []
       end
