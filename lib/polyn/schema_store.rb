@@ -43,8 +43,29 @@ module Polyn
       )
     end
 
+    def self.all_schemas!(nats, **opts)
+      subject_prefix = key_prefix(**opts)
+      sub            = nats.jetstream.subscribe("#{subject_prefix}.>")
+      schemas        = {}
+
+      loop do
+        msg                                                 = sub.next_msg
+        schemas[msg.subject.gsub("#{subject_prefix}.", "")] = msg.data unless msg.data.empty?
+      # A timeout is the only mechanism given to indicate there are no
+      # more messages
+      rescue NATS::IO::Timeout
+        break
+      end
+      sub.unsubscribe
+      schemas
+    end
+
     def self.store_name(**opts)
       opts.fetch(:name, STORE_NAME)
+    end
+
+    def self.key_prefix(**opts)
+      "$KV.#{store_name(**opts)}"
     end
   end
 end

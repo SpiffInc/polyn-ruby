@@ -63,4 +63,31 @@ RSpec.describe Polyn::SchemaStore do
       expect(error).to be_a(Polyn::Errors::SchemaError)
     end
   end
+
+  describe "#all_schemas!" do
+    it "gets all the schemas" do
+      described_class.save(nats, "foo.bar.v1", { "foo" => "bar" }, name: store_name)
+      described_class.save(nats, "bar.qux.v1", { "bar" => "qux" }, name: store_name)
+      schemas = described_class.all_schemas!(nats, name: store_name)
+      expect(schemas).to eq({
+        "foo.bar.v1" => "{\"foo\":\"bar\"}",
+        "bar.qux.v1" => "{\"bar\":\"qux\"}",
+      })
+    end
+
+    it "no message is empty hash" do
+      schemas = described_class.all_schemas!(nats, name: store_name)
+      expect(schemas).to eq({})
+    end
+
+    it "deleted schemas do not appear" do
+      described_class.save(nats, "foo.bar.v1", { "foo" => "bar" }, name: store_name)
+      described_class.save(nats, "bar.qux.v1", { "bar" => "qux" }, name: store_name)
+      nats.jetstream.key_value(store_name).delete("foo.bar.v1")
+      schemas = described_class.all_schemas!(nats, name: store_name)
+      expect(schemas).to eq({
+        "bar.qux.v1" => "{\"bar\":\"qux\"}",
+      })
+    end
+  end
 end
