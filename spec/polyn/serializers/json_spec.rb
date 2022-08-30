@@ -6,6 +6,11 @@ RSpec.describe Polyn::Serializers::Json do
   let(:nats) { NATS.connect }
   let(:js) { nats.jetstream }
   let(:store_name) { "JSON_SERIALIZER_TEST_STORE" }
+  let(:schema_store) { Polyn::SchemaStore.new(nats, name: store_name) }
+
+  subject do
+    described_class.new(schema_store)
+  end
 
   before(:each) do
     js.create_key_value(bucket: store_name)
@@ -35,7 +40,7 @@ RSpec.describe Polyn::Serializers::Json do
         },
       )
 
-      json  = described_class.serialize!(nats, event, store_name: store_name)
+      json  = subject.serialize!(event)
       event = JSON.parse(json)
       expect(event["data"]["a"]).to eq(1)
       expect(event["data"]["b"]).to eq(2)
@@ -44,14 +49,15 @@ RSpec.describe Polyn::Serializers::Json do
 
     it "raises if event is not a Polyn::Event" do
       expect do
-        described_class.serialize!(nats, "foo", store_name: store_name)
+        subject.serialize!("foo")
       end.to raise_error(Polyn::Errors::ValidationError)
     end
 
     it "raises if event is not a valid cloud event" do
       expect do
-        described_class.serialize!(nats,
-          Polyn::Event.new(id: "", data: "foo", type: "calc.mult.v1"), store_name: store_name)
+        subject.serialize!(
+          Polyn::Event.new(id: "", data: "foo", type: "calc.mult.v1"),
+        )
       end.to raise_error(Polyn::Errors::ValidationError)
     end
 
@@ -70,8 +76,9 @@ RSpec.describe Polyn::Serializers::Json do
       })
 
       expect do
-        described_class.serialize!(nats,
-          Polyn::Event.new(data: "foo", type: "calc.mult.v1"), store_name: store_name)
+        subject.serialize!(
+          Polyn::Event.new(data: "foo", type: "calc.mult.v1"),
+        )
       end.to raise_error(Polyn::Errors::ValidationError)
     end
   end
@@ -102,7 +109,7 @@ RSpec.describe Polyn::Serializers::Json do
         },
       })
 
-      event = described_class.deserialize!(nats, json, store_name: store_name)
+      event = subject.deserialize!(json)
 
       expect(event.data[:a]).to eq(1)
       expect(event.data[:b]).to eq(2)
@@ -111,7 +118,7 @@ RSpec.describe Polyn::Serializers::Json do
 
     it "raises if json not parseable" do
       expect do
-        described_class.deserialize!(nats, "foo", store_name: store_name)
+        subject.deserialize!("foo")
       end.to raise_error(Polyn::Errors::ValidationError)
     end
 
@@ -141,7 +148,7 @@ RSpec.describe Polyn::Serializers::Json do
       })
 
       expect do
-        described_class.deserialize!(nats, json, store_name: store_name)
+        subject.deserialize!(json)
       end.to raise_error(Polyn::Errors::SchemaError)
     end
 
@@ -171,14 +178,15 @@ RSpec.describe Polyn::Serializers::Json do
       })
 
       expect do
-        described_class.deserialize!(nats, json, store_name: store_name)
+        subject.deserialize!(json)
       end.to raise_error(Polyn::Errors::ValidationError)
     end
 
     it "raises if event is not a valid cloud event" do
       expect do
-        described_class.deserialize!(nats,
-          JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }), store_name: store_name)
+        subject.deserialize!(
+          JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }),
+        )
       end.to raise_error(Polyn::Errors::ValidationError)
     end
   end
@@ -209,7 +217,7 @@ RSpec.describe Polyn::Serializers::Json do
         },
       })
 
-      event = described_class.deserialize(nats, json, store_name: store_name)
+      event = subject.deserialize(json)
 
       expect(event.data[:a]).to eq(1)
       expect(event.data[:b]).to eq(2)
@@ -217,13 +225,13 @@ RSpec.describe Polyn::Serializers::Json do
     end
 
     it "gives error message if invalid" do
-      errors = described_class.deserialize(nats,
-        JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }), store_name: store_name)
+      errors = subject.deserialize(
+        JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }))
       expect(errors).to be_a(Polyn::Errors::ValidationError)
     end
   end
 
   def add_schema(type, schema)
-    Polyn::SchemaStore.save(nats, type, schema, name: store_name)
+    schema_store.save(type, schema)
   end
 end
