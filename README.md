@@ -135,6 +135,12 @@ nats.on_error { |e| raise e }
 sub = Polyn.subscribe(nats, "user.created.v1") { |msg| puts msg.data }
 ```
 
+## Testing
+
+Can set an environment variable of `POLYN_ENV=test` or `RAILS_ENV=test`. This will replace all
+`Polyn` calls with mocks. Rather than hitting a real nats-server, the mocks will create an isolated sandbox for each test to ensure that message passing in one test is not affecting any
+other test. This will help prevent flaky tests and race conditions.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run
