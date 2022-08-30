@@ -6,35 +6,42 @@ module Polyn
   class SchemaStore
     STORE_NAME = "POLYN_SCHEMAS"
 
+    def initialize(nats, **opts)
+      @nats       = nats
+      @store_name = opts[:name] || STORE_NAME
+      @key_prefix = "$KV.#{@store_name}"
+    end
+
     ##
     # Persist a schema. In prod/dev schemas should have already been persisted via
     # the Polyn CLI.
-    def self.save(nats, type, schema, **opts)
+    def save(type, schema)
       json_schema?(schema)
-      kv = nats.jetstream.key_value(store_name(**opts))
-      kv.put(type, JSON.generate(schema))
+      schemas[type] = JSON.generate(schema)
     end
 
-    def self.json_schema?(schema)
+    def json_schema?(schema)
       JSONSchemer.schema(schema)
     end
 
-    def self.get!(nats, type, **opts)
-      result = get(nats, type, **opts)
+    def get!(type)
+      result = get(type)
       raise result if result.is_a?(Polyn::Errors::SchemaError)
 
       result
     end
 
-    def self.get(nats, type, **opts)
-      kv    = nats.jetstream.key_value(store_name(**opts))
-      entry = kv.get(type)
-      entry.value
-    rescue NATS::KeyValue::BucketNotFoundError
-      Polyn::Errors::SchemaError.new(
-        "The Schema Store has not been setup on your NATS server. Make sure you use "\
-        "the Polyn CLI to create it",
-      )
+    def get(type)
+      schema = schemas[type]
+      if schema.nil?
+        return Polyn::Errors::SchemaError.new(
+            "Schema for #{type} does not exist. Make sure it's "\
+            "been added to your `events` codebase and has been loaded "\
+            "into the schema store on your NATS server",
+          )
+      end
+
+      schema
     rescue NATS::JetStream::Error::NotFound
       Polyn::Errors::SchemaError.new(
         "Schema for #{type} does not exist. Make sure it's "\
@@ -43,29 +50,27 @@ module Polyn
       )
     end
 
-    def self.all_schemas!(nats, **opts)
-      subject_prefix = key_prefix(**opts)
-      sub            = nats.jetstream.subscribe("#{subject_prefix}.>")
+    ##
+    # All the schemas in the key value store. Will cache them for faster lookups
+    def schemas
+      @schemas ||= fetch_schemas
+    end
+
+    def fetch_schemas
+      sub            = @nats.jetstream.subscribe("#{@key_prefix}.>")
       schemas        = {}
 
       loop do
-        msg                                                 = sub.next_msg
-        schemas[msg.subject.gsub("#{subject_prefix}.", "")] = msg.data unless msg.data.empty?
+        msg                                              = sub.next_msg
+        schemas[msg.subject.gsub("#{@key_prefix}.", "")] = msg.data unless msg.data.empty?
       # A timeout is the only mechanism given to indicate there are no
       # more messages
       rescue NATS::IO::Timeout
         break
       end
+
       sub.unsubscribe
       schemas
-    end
-
-    def self.store_name(**opts)
-      opts.fetch(:name, STORE_NAME)
-    end
-
-    def self.key_prefix(**opts)
-      "$KV.#{store_name(**opts)}"
     end
   end
 end
