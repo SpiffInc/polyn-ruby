@@ -72,5 +72,9 @@ module Polyn
       sub.unsubscribe
       schemas
     end
+
+    def load_schemas
+      @schemas = fetch_schemas
+    end
   end
 end
