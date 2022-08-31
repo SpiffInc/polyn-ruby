@@ -65,7 +65,7 @@ module Polyn
       @nats         = nats_class.new(nats)
       # Schema store nats has to be a real one, not a mock, because
       # the only place to load the schemas is from a running nats-server
-      @schema_store = Polyn::SchemaStore.new(nats, name: opts[:store_name], schemas: opts[:schemas])
+      @schema_store = schema_store(nats, **opts)
       @serializer   = Polyn::Serializers::Json.new(@schema_store)
     end
 
@@ -130,8 +130,20 @@ module Polyn
       })
     end
 
+    private
+
+    def schema_store(nats, **opts)
+      if Polyn.configuration.polyn_env == "test"
+        # For application tests reuse the same schema_store so we don't
+        # waste time fetching the schemas on every test
+        Thread.current[:polyn_schema_store]
+      else
+        Polyn::SchemaStore.new(nats, name: opts[:store_name])
+      end
+    end
+
     ##
-    # NATS connection instance
+    # NATS connection class to use based on environment
     def nats_class
       if Polyn.configuration.polyn_env == "test"
         Polyn::MockNats

@@ -20,13 +20,6 @@ RSpec.describe Polyn::SchemaStore do
   end
 
   describe "#new" do
-    it "can initialize with preloaded schemas" do
-      store = described_class.new(nats, name: store_name,
-        schemas: { "foo" => "bar", "baz" => "qux" })
-      expect(store.get!("foo")).to eq("bar")
-      expect(store.get!("baz")).to eq("qux")
-    end
-
     it "error if store does not exist" do
       expect do
         described_class.new(nats, name: "BAD_STORE")
