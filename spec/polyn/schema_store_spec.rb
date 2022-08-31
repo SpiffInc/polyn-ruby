@@ -27,6 +27,20 @@ RSpec.describe Polyn::SchemaStore do
     end
   end
 
+  describe "streams" do
+    it "pulls the streams" do
+      js.add_stream(NATS::JetStream::API::StreamConfig.new(name: "SCHEMA_STORE_TEST_STREAM_1"))
+      js.add_stream(NATS::JetStream::API::StreamConfig.new(name: "SCHEMA_STORE_TEST_STREAM_2"))
+
+      streams = subject.streams.map { |s| s[:config][:name] }
+      expect(streams).to include("SCHEMA_STORE_TEST_STREAM_1")
+      expect(streams).to include("SCHEMA_STORE_TEST_STREAM_2")
+
+      js.delete_stream("SCHEMA_STORE_TEST_STREAM_1")
+      js.delete_stream("SCHEMA_STORE_TEST_STREAM_2")
+    end
+  end
+
   describe "#save" do
     it "adds a schema to the store" do
       subject.save("new.one.v1", { "foo" => "bar" })
