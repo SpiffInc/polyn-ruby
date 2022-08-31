@@ -10,7 +10,13 @@ module Polyn
       @nats       = nats
       @store_name = opts[:name] || STORE_NAME
       @key_prefix = "$KV.#{@store_name}"
+      # Accept passed in schemas for test scenarios where we are
+      # doing multiple instantiations and don't need to fetch the
+      # schemas repeatedly
+      @schemas    = opts[:schemas] || fetch_schemas
     end
+
+    attr_reader :schemas
 
     ##
     # Persist a schema. In prod/dev schemas should have already been persisted via
@@ -33,6 +39,7 @@ module Polyn
 
     def get(type)
       schema = schemas[type]
+
       if schema.nil?
         return Polyn::Errors::SchemaError.new(
             "Schema for #{type} does not exist. Make sure it's "\
@@ -42,27 +49,24 @@ module Polyn
       end
 
       schema
-    rescue NATS::JetStream::Error::NotFound
-      Polyn::Errors::SchemaError.new(
-        "Schema for #{type} does not exist. Make sure it's "\
-        "been added to your `events` codebase and has been loaded "\
-        "into the schema store on your NATS server",
-      )
     end
 
-    ##
-    # All the schemas in the key value store. Will cache them for faster lookups
-    def schemas
-      @schemas ||= fetch_schemas
-    end
+    private
 
     def fetch_schemas
+      loop_store_keys
+    rescue NATS::JetStream::Error::NotFound
+      raise Polyn::Errors::SchemaError, "The Schema Store #{@store_name} has "\
+        "not been setup on your NATS server. Make sure you use Polyn CLI to create it"
+    end
+
+    def loop_store_keys
       sub            = @nats.jetstream.subscribe("#{@key_prefix}.>")
-      schemas        = {}
+      results        = {}
 
       loop do
         msg                                              = sub.next_msg
-        schemas[msg.subject.gsub("#{@key_prefix}.", "")] = msg.data unless msg.data.empty?
+        results[msg.subject.gsub("#{@key_prefix}.", "")] = msg.data unless msg.data.empty?
       # A timeout is the only mechanism given to indicate there are no
       # more messages
       rescue NATS::IO::Timeout
@@ -70,11 +74,7 @@ module Polyn
       end
 
       sub.unsubscribe
-      schemas
-    end
-
-    def load_schemas
-      @schemas = fetch_schemas
+      results
     end
   end
 end

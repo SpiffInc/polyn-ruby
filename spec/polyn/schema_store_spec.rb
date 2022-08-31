@@ -19,6 +19,21 @@ RSpec.describe Polyn::SchemaStore do
     js.delete_key_value(store_name)
   end
 
+  describe "#new" do
+    it "can initialize with preloaded schemas" do
+      store = described_class.new(nats, name: store_name,
+        schemas: { "foo" => "bar", "baz" => "qux" })
+      expect(store.get!("foo")).to eq("bar")
+      expect(store.get!("baz")).to eq("qux")
+    end
+
+    it "error if store does not exist" do
+      expect do
+        described_class.new(nats, name: "BAD_STORE")
+      end.to raise_error(Polyn::Errors::SchemaError)
+    end
+  end
+
   describe "#save" do
     it "adds a schema to the store" do
       subject.save("new.one.v1", { "foo" => "bar" })
@@ -32,12 +47,6 @@ RSpec.describe Polyn::SchemaStore do
       expect(subject.get!("foo.bar.v1")).to eq("{\"foo\":\"bar\"}")
     end
 
-    it "error if store does not exist" do
-      expect do
-        described_class.new(nats, name: "BAD_STORE").get!("foo.bar.v1")
-      end.to raise_error(Polyn::Errors::SchemaError)
-    end
-
     it "error if schema does not exist" do
       expect do
         subject.get!("not.a.thing.v1")
@@ -49,12 +58,6 @@ RSpec.describe Polyn::SchemaStore do
     it "gets a schema from the store" do
       subject.save("foo.bar.v1", { "foo" => "bar" })
       expect(subject.get("foo.bar.v1")).to eq("{\"foo\":\"bar\"}")
-    end
-
-    it "error if store does not exist" do
-      error = described_class.new(nats, name: "BAD_STORE").get("foo.bar.v1")
-
-      expect(error).to be_a(Polyn::Errors::SchemaError)
     end
 
     it "error if schema does not exist" do
