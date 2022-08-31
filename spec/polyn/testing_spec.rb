@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "polyn/testing/testing"
+require "polyn/testing"
 
 Polyn::Testing.setup
 

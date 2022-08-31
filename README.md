@@ -137,9 +137,21 @@ sub = Polyn.subscribe(nats, "user.created.v1") { |msg| puts msg.data }
 
 ## Testing
 
-Can set an environment variable of `POLYN_ENV=test` or `RAILS_ENV=test`. This will replace all
-`Polyn` calls with mocks. Rather than hitting a real nats-server, the mocks will create an isolated sandbox for each test to ensure that message passing in one test is not affecting any
-other test. This will help prevent flaky tests and race conditions.
+Add the following to your `spec_helper.rb`
+
+```ruby
+require "polyn/testing"
+
+Polyn::Testing.setup
+```
+
+Add the following to individual test files `include_context :polyn`
+
+Set an environment variable of `POLYN_ENV=test` or `RAILS_ENV=test`. This will replace all
+`Polyn` calls to NATS with mocks. Rather than hitting a real nats-server, the mocks will create an isolated sandbox for each test to ensure that message passing in one test is not affecting any
+other test. This will help prevent flaky tests and race conditions. The tests will also all share the same schema store so that they aren't fetched from the nats-server repeatedly.
+
+You will need a running nats-server for test startup. When the tests start it will load all your schema, stream, and consumer information to be used for testing. The tests themselves will not hit the real nats-server though.
 
 ## Development
 

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "digest/sha1"
 require "polyn/schema_store"
 require "polyn/testing/mock_nats"
 
