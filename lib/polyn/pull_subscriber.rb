@@ -17,7 +17,7 @@ module Polyn
       @stream        = @nats.jetstream.find_stream_name_by_subject(@type)
       self.class.validate_consumer_exists!(@nats, @stream, @consumer_name)
       @psub          = @nats.jetstream.pull_subscribe(@type, @consumer_name)
-      @store_name    = store_name(fields)
+      @serializer    = fields.fetch(:serializer)
     end
 
     # nats-pure will create a consumer if the one you passed does not exist.
@@ -41,7 +41,7 @@ module Polyn
     def fetch(batch = 1, params = {})
       msgs = @psub.fetch(batch, params)
       msgs.map do |msg|
-        event    = Polyn::Serializers::Json.deserialize(@nats, msg.data, store_name: @store_name)
+        event    = @serializer.deserialize(msg.data)
         if event.is_a?(Polyn::Errors::Error)
           msg.term
           raise event
@@ -50,12 +50,6 @@ module Polyn
         msg.data = event
         msg
       end
-    end
-
-    private
-
-    def store_name(opts)
-      opts.fetch(:store_name, Polyn::SchemaStore.store_name)
     end
   end
 end

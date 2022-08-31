@@ -7,6 +7,8 @@ RSpec.describe Polyn::PullSubscriber do
   let(:js) { nats.jetstream }
   let(:store_name) { "PULL_SUBSCRIBER_TEST_STORE" }
   let(:stream_name) { "PULL_SUBSCRIBER_TEST_STREAM" }
+  let(:schema_store) { Polyn::SchemaStore.new(nats, name: store_name) }
+  let(:serializer) { Polyn::Serializers::Json.new(schema_store) }
 
   before(:each) do
     js.add_stream(name: stream_name, subjects: ["calc.add.v1"])
@@ -33,12 +35,12 @@ RSpec.describe Polyn::PullSubscriber do
   end
 
   subject do
-    described_class.new({ nats: nats, store_name: store_name, type: "calc.add.v1" })
+    described_class.new({ nats: nats, type: "calc.add.v1", serializer: serializer })
   end
 
   describe "#fetch" do
     it "turns msg body into event" do
-      Polyn.publish(nats, "calc.add.v1", { a: 1, b: 2 }, store_name: store_name)
+      Polyn.connect(nats, store_name: store_name).publish("calc.add.v1", { a: 1, b: 2 })
       msgs = subject.fetch
       msg  = msgs[0]
       expect(msg.data).to be_a(Polyn::Event)
@@ -56,6 +58,6 @@ RSpec.describe Polyn::PullSubscriber do
   end
 
   def add_schema(type, schema)
-    Polyn::SchemaStore.save(nats, type, schema, name: store_name)
+    js.key_value(store_name).put(type, JSON.generate(schema))
   end
 end
