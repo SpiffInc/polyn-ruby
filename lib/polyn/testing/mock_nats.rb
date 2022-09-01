@@ -3,6 +3,7 @@
 require "nats/io/msg"
 require "polyn/naming"
 require "polyn/testing/mock_jetstream"
+require "polyn/testing/mock_msg"
 require "polyn/testing/mock_pull_subscription"
 
 module Polyn
@@ -20,7 +21,7 @@ module Polyn
       attr_reader :nats, :messages
 
       def publish(subject, data, reply_to = nil, **opts)
-        msg = NATS::Msg.new(subject: subject, data: data, reply: reply_to,
+        msg = Polyn::Testing::MockMsg.new(subject: subject, data: data, reply: reply_to,
           header: opts[:header])
         send_to_subscribers(msg)
         @messages << msg

@@ -13,7 +13,7 @@ module Polyn
     end
 
     def subscribe(type, opts = {}, &callback)
-      @nats.subscribe(type, opts) { |msg| callback.call(msg) }
+      @nats.subscribe(type, opts) { |msg| callback.call(Polyn::Nats::Msg.new(msg)) }
     end
 
     def jetstream
