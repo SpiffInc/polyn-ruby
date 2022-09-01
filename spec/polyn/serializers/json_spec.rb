@@ -6,32 +6,29 @@ RSpec.describe Polyn::Serializers::Json do
   let(:nats) { NATS.connect }
   let(:js) { nats.jetstream }
   let(:store_name) { "JSON_SERIALIZER_TEST_STORE" }
-  let(:schema_store) { Polyn::SchemaStore.new(nats, name: store_name) }
+  let(:schema_store) do
+    Polyn::SchemaStore.new(nats, name: store_name, schemas: {
+      "calc.mult.v1" => JSON.generate({
+        "type" => "object",
+        "properties": {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      }),
+    })
+  end
 
   subject do
     described_class.new(schema_store)
   end
 
-  before(:each) do
-    js.create_key_value(bucket: store_name)
-  end
-
-  after(:each) do
-    js.delete_key_value(store_name)
-  end
-
   describe "#serialize!" do
     it "serializes valid event" do
-      add_schema("calc.mult.v1", {
-        "data" => {
-          "type"       => "object",
-          "properties" => {
-            "a" => { "type" => "integer" },
-            "b" => { "type" => "integer" },
-          },
-        },
-      })
-
       event = Polyn::Event.new(
         type: "calc.mult.v1",
         data: {
@@ -62,19 +59,6 @@ RSpec.describe Polyn::Serializers::Json do
     end
 
     it "raises if event data is not valid" do
-      add_schema("calc.mult.v1", {
-        "type"       => "object",
-        "properties" => {
-          "data" => {
-            "type"       => "object",
-            "properties" => {
-              "a" => { "type" => "integer" },
-              "b" => { "type" => "integer" },
-            },
-          },
-        },
-      })
-
       expect do
         subject.serialize!(
           Polyn::Event.new(data: "foo", type: "calc.mult.v1"),
@@ -85,19 +69,6 @@ RSpec.describe Polyn::Serializers::Json do
 
   describe "#deserialize!" do
     it "deserializes valid event" do
-      add_schema("calc.mult.v1", {
-        "type"       => "object",
-        "properties" => {
-          "data" => {
-            "type"       => "object",
-            "properties" => {
-              "a" => { "type" => "integer" },
-              "b" => { "type" => "integer" },
-            },
-          },
-        },
-      })
-
       json = JSON.generate({
         id:          "foo",
         specversion: "1.0",
@@ -123,19 +94,6 @@ RSpec.describe Polyn::Serializers::Json do
     end
 
     it "it raises if no schema exists" do
-      add_schema("calc.mult.v1", {
-        "type"       => "object",
-        "properties" => {
-          "data" => {
-            "type"       => "object",
-            "properties" => {
-              "a" => { "type" => "integer" },
-              "b" => { "type" => "integer" },
-            },
-          },
-        },
-      })
-
       json = JSON.generate({
         id:          "foo",
         specversion: "1.0",
@@ -153,19 +111,6 @@ RSpec.describe Polyn::Serializers::Json do
     end
 
     it "it raises if doesn't match schema" do
-      add_schema("calc.mult.v1", {
-        "type"       => "object",
-        "properties" => {
-          "data" => {
-            "type"       => "object",
-            "properties" => {
-              "a" => { "type" => "integer" },
-              "b" => { "type" => "integer" },
-            },
-          },
-        },
-      })
-
       json = JSON.generate({
         id:          "foo",
         specversion: "1.0",
@@ -193,19 +138,6 @@ RSpec.describe Polyn::Serializers::Json do
 
   describe "#deserialize" do
     it "deserializes valid event" do
-      add_schema("calc.mult.v1", {
-        "type"       => "object",
-        "properties" => {
-          "data" => {
-            "type"       => "object",
-            "properties" => {
-              "a" => { "type" => "integer" },
-              "b" => { "type" => "integer" },
-            },
-          },
-        },
-      })
-
       json = JSON.generate({
         id:          "foo",
         specversion: "1.0",
@@ -226,7 +158,8 @@ RSpec.describe Polyn::Serializers::Json do
 
     it "gives error message if invalid" do
       errors = subject.deserialize(
-        JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }))
+        JSON.generate({ id: "", data: "foo", type: "calc.mult.v1" }),
+      )
       expect(errors).to be_a(Polyn::Errors::ValidationError)
     end
   end
