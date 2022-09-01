@@ -6,26 +6,37 @@ module Polyn
     # Mock Pull Subscription for applications to use in testing
     class MockPullSubscription
       def initialize(mock_nats, **opts)
-        @mock_nats     = mock_nats
-        @real_nats     = mock_nats.nats
-        @subject == opts.fetch(:subject)
-        @consumer_name = opts.fetch(:consumer_name)
+        @mock_nats       = mock_nats
+        @real_nats       = mock_nats.nats
+        @subject         = opts.fetch(:subject)
+        @consumer_name   = opts.fetch(:consumer_name)
+        @stream          = update_stream
+        @delivery_cursor = 0
+        @mock_nats.add_consumer(self)
       end
 
-      def consumer_info(stream, consumer_name)
-        @real_nats.jetstream.consumer_info(stream, consumer_name)
+      def fetch(batch = 1, **_params)
+        start_pos        = @delivery_cursor
+        end_pos          = start_pos + batch - 1
+        update_cursor(end_pos)
+        @stream[start_pos..end_pos]
       end
 
-      def find_stream_name_by_subject(subject)
-        @real_nats.jetstream.find_stream_name_by_subject(subject)
+      def update_stream
+        @stream = @mock_nats.messages.filter do |message|
+          Polyn::Naming.subject_matches?(message.subject, @subject)
+        end
+        @stream
       end
 
-      def pull_subscribe(subject, consumer_name)
-        Polyn::Testing::MockPullSubscription.new(
-          mock_nats,
-          subject:       subject,
-          consumer_name: consumer_name,
-        )
+      def update_cursor(end_pos)
+        next_pos = end_pos + 1
+
+        @delivery_cursor = if @stream[next_pos]
+                             next_pos
+                           else
+                             @stream.length
+                           end
       end
     end
   end
