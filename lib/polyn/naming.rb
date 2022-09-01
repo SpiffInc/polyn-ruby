@@ -93,6 +93,27 @@ module Polyn
       end
     end
 
+    ##
+    # Determine if a given subject matches a subscription pattern
+    def self.subject_matches?(subject, pattern)
+      separator         = "."
+
+      pattern_tokens = pattern.split(separator).map { |token| build_subject_pattern_part(token) }
+      pattern_tokens = pattern_tokens.join("\\#{separator}")
+      subject.match?(Regexp.new(pattern_tokens))
+    end
+
+    def self.build_subject_pattern_part(token)
+      single_wildcard   = "*"
+      multiple_wildcard = ">"
+
+      return "(\\w+)" if token == single_wildcard
+
+      return "((\\w+\\.)*\\w)" if token == multiple_wildcard
+
+      token
+    end
+
     def self.domain
       Polyn.configuration.domain
     end

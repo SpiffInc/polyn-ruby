@@ -303,4 +303,59 @@ RSpec.describe Polyn::Naming do
         "my:source")).to eq("user_backend_my_source_foo_bar_v1")
     end
   end
+
+  describe "#subject_matches?" do
+    it "equal one token" do
+      expect(described_class.subject_matches?("foo", "foo")).to eq(true)
+    end
+
+    it "equal 3 tokens" do
+      expect(described_class.subject_matches?("foo.bar.v1", "foo.bar.v1")).to eq(true)
+    end
+
+    it "not equal 3 token" do
+      expect(described_class.subject_matches?("foo.bar.v1", "bar.baz.v1")).to eq(false)
+    end
+
+    it "equal with 1 wildcard" do
+      expect(described_class.subject_matches?("foo.bar", "foo.*")).to eq(true)
+    end
+
+    it "not equal with 1 wildcard" do
+      expect(described_class.subject_matches?("foo", "foo.*")).to eq(false)
+    end
+
+    it "equal with 2 wildcards" do
+      expect(described_class.subject_matches?("foo.bar.baz", "foo.*.*")).to eq(true)
+    end
+
+    it "not equal with 2 wildcards" do
+      expect(described_class.subject_matches?("foo.bar", "foo.*.*")).to eq(false)
+    end
+
+    it "equal with 1 multiple-wildcard" do
+      expect(described_class.subject_matches?("foo.bar", "foo.>")).to eq(true)
+    end
+
+    it "equal with 1 multiple-wildcard, multiple tokens" do
+      expect(described_class.subject_matches?("foo.bar.baz.qux", "foo.>")).to eq(true)
+    end
+
+    it "not equal with 1 multiple-wildcard, multiple tokens" do
+      expect(described_class.subject_matches?("foo", "foo.bar.>")).to eq(false)
+    end
+
+    it "equal with 1 single-wildcard and 1 multiple-wildcard, multiple tokens" do
+      expect(described_class.subject_matches?("foo.bar.baz.qux", "foo.*.>")).to eq(true)
+    end
+
+    it "equal with 2 single-wildcard and 1 multiple-wildcard, multiple tokens" do
+      expect(described_class.subject_matches?("foo.bar.baz.qux.other.thing",
+        "foo.*.*.>")).to eq(true)
+    end
+
+    it "not equal with 2 single-wildcard and 1 multiple-wildcard, multiple tokens" do
+      expect(described_class.subject_matches?("foo.bar", "foo.*.*.>")).to eq(false)
+    end
+  end
 end
