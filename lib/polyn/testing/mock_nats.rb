@@ -15,6 +15,8 @@ module Polyn
         @subscribers = []
       end
 
+      attr_reader :nats
+
       def publish(subject, data, reply_to = nil, **opts)
         msg = NATS::Msg.new(subject: subject, data: data, reply: reply_to,
           header: opts[:header])
@@ -27,7 +29,7 @@ module Polyn
       end
 
       def jetstream
-        @jetstream ||= MockJetStream.new(@nats)
+        @jetstream ||= MockJetStream.new(self)
       end
 
       private

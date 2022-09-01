@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "polyn/testing/mock_nats"
 require "polyn/testing/mock_jetstream"
 
 RSpec.describe Polyn::Testing::MockJetStream do
@@ -10,7 +11,7 @@ RSpec.describe Polyn::Testing::MockJetStream do
   let(:consumer) { "MOCK_JS_CONSUMER" }
 
   subject do
-    described_class.new(nats)
+    described_class.new(Polyn::Testing::MockNats.new(nats))
   end
 
   before(:each) do
@@ -23,7 +24,8 @@ RSpec.describe Polyn::Testing::MockJetStream do
   end
 
   it "#consumer_info looks up consumer name from nats" do
-    expect(subject.consumer_info(stream, consumer)).to be_instance_of(NATS::JetStream::API::ConsumerInfo)
+    expect(subject.consumer_info(stream,
+      consumer)).to be_instance_of(NATS::JetStream::API::ConsumerInfo)
   end
 
   it "#find_stream_name_by_subject looks up stream name from nats" do
