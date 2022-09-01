@@ -6,27 +6,11 @@ RSpec.describe Polyn do
   let(:nats) { NATS.connect }
   let(:js) { nats.jetstream }
   let(:store_name) { "POLYN_TEST_STORE" }
-
-  subject do
-    described_class.connect(nats, store_name: store_name)
-  end
-
-  before(:each) do
-    js.create_key_value(bucket: store_name)
-  end
-
-  after(:each) do
-    js.delete_key_value(store_name)
-  end
-
-  describe "#publish" do
-    before(:each) do
-      js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
-      js.add_consumer("CALC", durable_name: "my_consumer")
-
-      add_schema("calc.mult.v1", {
-        "type"       => "object",
-        "properties" => {
+  let(:schema_store) do
+    Polyn::SchemaStore.new(nats, name: store_name, schemas: {
+      "calc.mult.v1" => JSON.generate({
+        "type" => "object",
+        "properties": {
           "data" => {
             "type"       => "object",
             "properties" => {
@@ -35,7 +19,18 @@ RSpec.describe Polyn do
             },
           },
         },
-      })
+      }),
+    })
+  end
+
+  subject do
+    described_class.connect(nats, store_name: store_name, schema_store: schema_store)
+  end
+
+  describe "#publish" do
+    before(:each) do
+      js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
+      js.add_consumer("CALC", durable_name: "my_consumer")
     end
 
     after(:each) do
@@ -146,19 +141,6 @@ RSpec.describe Polyn do
       mon  = Monitor.new
       done = mon.new_cond
 
-      add_schema("calc.mult.v1", {
-        "type"       => "object",
-        "properties" => {
-          "data" => {
-            "type"       => "object",
-            "properties" => {
-              "a" => { "type" => "integer" },
-              "b" => { "type" => "integer" },
-            },
-          },
-        },
-      })
-
       msgs = []
       subject.subscribe("calc.mult.v1") do |msg|
         msgs << msg
@@ -176,10 +158,6 @@ RSpec.describe Polyn do
       expect(msgs[0].data.data[:a]).to eq(1)
       expect(msgs[0].data.data[:b]).to eq(2)
     end
-  end
-
-  def add_schema(type, schema)
-    js.key_value(store_name).put(type, JSON.generate(schema))
   end
 
   def get_message(type, consumer, stream)
