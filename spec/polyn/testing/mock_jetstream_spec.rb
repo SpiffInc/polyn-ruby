@@ -2,7 +2,6 @@
 
 require "spec_helper"
 require "polyn/testing/mock_nats"
-require "polyn/testing/mock_jetstream"
 
 RSpec.describe Polyn::Testing::MockJetStream do
   let(:nats) { NATS.connect }
@@ -30,5 +29,10 @@ RSpec.describe Polyn::Testing::MockJetStream do
 
   it "#find_stream_name_by_subject looks up stream name from nats" do
     expect(subject.find_stream_name_by_subject("mock_js.foo")).to eq(stream)
+  end
+
+  it "#pull_subscribe returns a pull subscription" do
+    expect(subject.pull_subscribe("foo",
+      "bar")).to be_instance_of(Polyn::Testing::MockPullSubscription)
   end
 end

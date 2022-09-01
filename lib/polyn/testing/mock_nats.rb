@@ -3,6 +3,7 @@
 require "nats/io/msg"
 require "polyn/naming"
 require "polyn/testing/mock_jetstream"
+require "polyn/testing/mock_pull_subscription"
 
 module Polyn
   class Testing

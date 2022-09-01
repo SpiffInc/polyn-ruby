@@ -3,11 +3,13 @@
 module Polyn
   class Testing
     ##
-    # Mock JetStream for applications to use in testing
-    class MockJetStream
-      def initialize(mock_nats)
-        @mock_nats = mock_nats
-        @real_nats = mock_nats.nats
+    # Mock Pull Subscription for applications to use in testing
+    class MockPullSubscription
+      def initialize(mock_nats, **opts)
+        @mock_nats     = mock_nats
+        @real_nats     = mock_nats.nats
+        @subject == opts.fetch(:subject)
+        @consumer_name = opts.fetch(:consumer_name)
       end
 
       def consumer_info(stream, consumer_name)
@@ -20,7 +22,7 @@ module Polyn
 
       def pull_subscribe(subject, consumer_name)
         Polyn::Testing::MockPullSubscription.new(
-          @mock_nats,
+          mock_nats,
           subject:       subject,
           consumer_name: consumer_name,
         )
