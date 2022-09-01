@@ -66,7 +66,7 @@ module Polyn
       @nats         = nats_class.new(nats)
       # Schema store nats has to be a real one, not a mock, because
       # the only place to load the schemas is from a running nats-server
-      @schema_store = schema_store(nats, **opts)
+      @schema_store = opts[:schema_store] || schema_store(nats, **opts)
       @serializer   = Polyn::Serializers::Json.new(@schema_store)
     end
 

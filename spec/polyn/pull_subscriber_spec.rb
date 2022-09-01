@@ -7,31 +7,31 @@ RSpec.describe Polyn::PullSubscriber do
   let(:js) { nats.jetstream }
   let(:store_name) { "PULL_SUBSCRIBER_TEST_STORE" }
   let(:stream_name) { "PULL_SUBSCRIBER_TEST_STREAM" }
-  let(:schema_store) { Polyn::SchemaStore.new(nats, name: store_name) }
+  let(:schema_store) do
+    Polyn::SchemaStore.new(nats, name: store_name, schemas: {
+      "calc.add.v1" => JSON.generate({
+        "type" => "object",
+        "properties": {
+          "data" => {
+            "type"       => "object",
+            "properties" => {
+              "a" => { "type" => "integer" },
+              "b" => { "type" => "integer" },
+            },
+          },
+        },
+      }),
+    })
+  end
   let(:serializer) { Polyn::Serializers::Json.new(schema_store) }
 
   before(:each) do
     js.add_stream(name: stream_name, subjects: ["calc.add.v1"])
     js.add_consumer(stream_name, durable_name: "user_backend_calc_add_v1")
-    js.create_key_value(bucket: store_name)
-
-    add_schema("calc.add.v1", {
-      "type"       => "object",
-      "properties" => {
-        "data" => {
-          "type"       => "object",
-          "properties" => {
-            "a" => { "type" => "integer" },
-            "b" => { "type" => "integer" },
-          },
-        },
-      },
-    })
   end
 
   after(:each) do
     js.delete_stream(stream_name)
-    js.delete_key_value(store_name)
   end
 
   subject do
@@ -40,7 +40,9 @@ RSpec.describe Polyn::PullSubscriber do
 
   describe "#fetch" do
     it "turns msg body into event" do
-      Polyn.connect(nats, store_name: store_name).publish("calc.add.v1", { a: 1, b: 2 })
+      Polyn.connect(nats, store_name: store_name, schema_store: schema_store).publish(
+        "calc.add.v1", { a: 1, b: 2 }
+      )
       msgs = subject.fetch
       msg  = msgs[0]
       expect(msg.data).to be_a(Polyn::Event)
@@ -55,9 +57,5 @@ RSpec.describe Polyn::PullSubscriber do
         subject.fetch
       end.to raise_error(Polyn::Errors::ValidationError)
     end
-  end
-
-  def add_schema(type, schema)
-    js.key_value(store_name).put(type, JSON.generate(schema))
   end
 end
