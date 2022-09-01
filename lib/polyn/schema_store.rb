@@ -5,17 +5,15 @@ module Polyn
   # Persisting and interacting with persisted schemas
   class SchemaStore
     STORE_NAME   = "POLYN_SCHEMAS"
-    LIST_STREAMS = "$JS.API.STREAM.LIST"
 
     def initialize(nats, **opts)
       @nats       = nats
       @store_name = opts[:name] || STORE_NAME
       @key_prefix = "$KV.#{@store_name}"
       @schemas    = fetch_schemas
-      @streams    = fetch_streams
     end
 
-    attr_reader :schemas, :streams
+    attr_reader :schemas
 
     ##
     # Persist a schema. In prod/dev schemas should have already been persisted via
@@ -74,16 +72,6 @@ module Polyn
 
       sub.unsubscribe
       results
-    end
-
-    def fetch_streams
-      result = api_request(LIST_STREAMS)
-      result[:streams]
-    end
-
-    def api_request(subject, body = "", **params)
-      msg = @nats.request(subject, body, **params)
-      JSON.parse(msg.data, symbolize_names: true)
     end
   end
 end
