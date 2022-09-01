@@ -8,7 +8,7 @@ RSpec.describe Polyn::SchemaStore do
   let(:js) { nats.jetstream }
 
   subject do
-    described_class.new(nats, name: store_name)
+    described_class.new(nats, name: store_name, schemas: {})
   end
 
   before(:each) do

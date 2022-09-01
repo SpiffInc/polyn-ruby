@@ -10,7 +10,7 @@ module Polyn
       @nats       = nats
       @store_name = opts[:name] || STORE_NAME
       @key_prefix = "$KV.#{@store_name}"
-      @schemas    = fetch_schemas
+      @schemas    = opts[:schemas] || fetch_schemas
     end
 
     attr_reader :schemas

@@ -16,9 +16,9 @@ module Polyn
 
       RSpec.shared_context :polyn do
         before(:each) do
-          # Add reusable instances to the running thread so that
-          # application-level Polyn instantiations can use them when
-          # in a test environment
+          # Have a global, shared schema store that only pulls the schemas
+          # once for the whole test suite. For testing an application the
+          # schemas are expected to be the same throughout the whole suite
           Thread.current[:polyn_schema_store] = schema_store
         end
 
