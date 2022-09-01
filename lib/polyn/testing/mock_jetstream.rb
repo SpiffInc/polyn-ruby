@@ -12,6 +12,10 @@ module Polyn
       def consumer_info(stream, consumer_name)
         @nats.jetstream.consumer_info(stream, consumer_name)
       end
+
+      def find_stream_name_by_subject(subject)
+        @nats.jetstream.find_stream_name_by_subject(subject)
+      end
     end
   end
 end
