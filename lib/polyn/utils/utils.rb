@@ -19,4 +19,3 @@
 
 require "polyn/utils/hash"
 require "polyn/utils/string"
-require "polyn/utils/concurrent_logger"
