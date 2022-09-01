@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "nats/io/msg"
+require "polyn/naming"
 require "polyn/testing/mock_jetstream"
 
 module Polyn
@@ -8,7 +9,8 @@ module Polyn
     ##
     # Mock Nats connection for applications to use in testing
     class MockNats
-      def initialize(_data)
+      def initialize(nats)
+        @nats        = nats
         @messages    = Queue.new
         @subscribers = []
       end
@@ -25,14 +27,14 @@ module Polyn
       end
 
       def jetstream
-        @jetstream ||= MockJetStream.new
+        @jetstream ||= MockJetStream.new(@nats)
       end
 
       private
 
       def send_to_subscribers(msg)
         @subscribers.each do |sub|
-          sub[:callback].call(msg) if sub[:subject] == msg.subject
+          sub[:callback].call(msg) if Polyn::Naming.subject_matches?(msg.subject, sub[:subject])
         end
       end
     end
