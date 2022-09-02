@@ -66,22 +66,25 @@ require "nats/client"
 require "polyn"
 
 nats = NATS.connect
+polyn = Polyn.connect(nats)
 
-Polyn.publish(nats, "user.created.v1", { name: "Mary" })
+polyn.publish("user.created.v1", { name: "Mary" })
 ```
 
 Add `:source` to make the `source` of the event more specific
 
 
 ```ruby
-Polyn.publish(nats, "user.created.v1", { name: "Mary" }, source: "new.users")
+polyn.publish("user.created.v1", { name: "Mary" }, source: "new.users")
 ```
 
 Add `:triggered_by` to add a triggering event to the `polyntrace`
 
 ```ruby
+polyn = Polyn.connect(nats)
+
 event = Polyn::Event.new
-Polyn.publish(nats, "user.created.v1", { name: "Mary" }, triggered_by: event)
+polyn.publish("user.created.v1", { name: "Mary" }, triggered_by: event)
 ```
 
 You can also include options of `:header` and/or `:reply_to` to passthrough to NATS
@@ -93,8 +96,9 @@ require "nats/client"
 require "polyn"
 
 nats = NATS.connect
+polyn = Polyn.connect(nats)
 
-psub = Polyn.pull_subscribe(nats, "user.created.v1")
+psub = Polyn.pull_subscribe("user.created.v1")
 
 loop do
   msgs = psub.fetch(5)
@@ -116,8 +120,9 @@ require "nats/client"
 require "polyn"
 
 nats = NATS.connect
+polyn = Polyn.connect
 
-sub = Polyn.subscribe(nats, "user.created.v1") { |msg| puts msg.data }
+sub = polyn.subscribe("user.created.v1") { |msg| puts msg.data }
 ```
 
 `Polyn.subscribe` will process the block you pass it asynchronously in a separate thread
@@ -131,8 +136,9 @@ require "nats/client"
 
 nats = NATS.connect
 nats.on_error { |e| raise e }
+polyn = Polyn.connect(nats)
 
-sub = Polyn.subscribe(nats, "user.created.v1") { |msg| puts msg.data }
+sub = polyn.subscribe("user.created.v1") { |msg| puts msg.data }
 ```
 
 ## Testing
@@ -153,7 +159,7 @@ Add the following to individual test files `include_context :polyn`
 
 ### Test Isolation
 
-Following the test setup instructions replaces *most* `Polyn` calls to NATS with mocks. Rather than hitting a real nats-server, the mocks will create an isolated sandbox for each test to ensure that message passing in one test is not affecting any other test. This will help prevent flaky tests and race conditions. It also makes concurrent testing possible. The tests will also all share the same schema store so that scheams aren't fetched from the nats-server repeatedly.
+Following the test setup instructions replaces *most* `Polyn` calls to NATS with mocks. Rather than hitting a real nats-server, the mocks will create an isolated sandbox for each test to ensure that message passing in one test is not affecting any other test. This will help prevent flaky tests and race conditions. It also makes concurrent testing possible. The tests will also all share the same schema store so that schemas aren't fetched from the nats-server repeatedly.
 
 Despite mocking some NATS functionality you will still need a running nats-server for your testing.
 When the tests start it will load all your schemas. The tests themselves will also use the running server to verify
