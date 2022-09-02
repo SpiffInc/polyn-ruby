@@ -3,6 +3,9 @@
 require "spec_helper"
 require "polyn/testing"
 
+nats = NATS.connect
+js   = nats.jetstream
+js.create_key_value(bucket: Polyn::SchemaStore::STORE_NAME)
 Polyn::Testing.setup
 
 RSpec.describe Polyn::Testing do
