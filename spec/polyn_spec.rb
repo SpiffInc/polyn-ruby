@@ -92,8 +92,10 @@ RSpec.describe Polyn do
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
 
-      expect(msg.header).to eq({ "Nats-Msg-Id" => JSON.parse(msg.data)["id"],
-"a header key" => "a header value" })
+      expect(msg.header).to eq({
+        "Nats-Msg-Id"  => JSON.parse(msg.data)["id"],
+        "a header key" => "a header value",
+      })
     end
 
     it "raises if msg doesn't conform to schema" do
