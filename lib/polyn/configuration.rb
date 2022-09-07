@@ -5,9 +5,9 @@ module Polyn
   # Configuration data for Polyn
   class Configuration
     def initialize
-      @domain                = nil
-      @source_root           = nil
-      @polyn_env             = ENV["POLYN_ENV"] || ENV["RAILS_ENV"] || "development"
+      @domain      = nil
+      @source_root = nil
+      @polyn_env   = ENV["POLYN_ENV"] || ENV["RAILS_ENV"] || "development"
     end
 
     attr_reader :polyn_env
