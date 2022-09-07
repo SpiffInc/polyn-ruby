@@ -22,50 +22,54 @@ module Polyn
     ##
     # Handles serializing and deserializing data to and from JSON.
     class Json
-      def self.serialize!(nats, event, **opts)
+      def initialize(schema_store)
+        @schema_store = schema_store
+      end
+
+      def serialize!(event)
         validate_event_instance!(event)
         event = event.to_h
-        validate!(nats, event, **opts)
+        validate!(event)
         JSON.generate(event)
       end
 
-      def self.deserialize!(nats, json, **opts)
-        data = deserialize(nats, json, **opts)
+      def deserialize!(json)
+        data = deserialize(json)
         raise data if data.is_a?(Polyn::Errors::Error)
 
         data
       end
 
-      def self.deserialize(nats, json, **opts)
+      def deserialize(json)
         data = decode(json)
         return data if data.is_a?(Polyn::Errors::Error)
 
-        error = validate(nats, data, **opts)
+        error = validate(data)
         return error if error.is_a?(Polyn::Errors::Error)
 
         data   = Polyn::Utils::Hash.deep_symbolize_keys(data)
         Event.new(data)
       end
 
-      def self.decode(json)
+      def decode(json)
         JSON.parse(json)
       rescue JSON::ParserError
         Polyn::Errors::ValidationError.new("Polyn was unable to decode the following message: \n#{json}")
       end
 
-      def self.validate!(nats, event, **opts)
-        result = validate(nats, event, **opts)
+      def validate!(event)
+        result = validate(event)
         raise result if result.is_a?(Polyn::Errors::Error)
       end
 
-      def self.validate(nats, event, **opts)
+      def validate(event)
         error = validate_cloud_event(event)
         return error if error.is_a?(Polyn::Errors::Error)
 
-        validate_data(nats, event, **opts)
+        validate_data(event)
       end
 
-      def self.validate_event_instance!(event)
+      def validate_event_instance!(event)
         if event.instance_of?(Polyn::Event)
           event
         else
@@ -74,22 +78,22 @@ module Polyn
         end
       end
 
-      def self.validate_cloud_event(event)
+      def validate_cloud_event(event)
         cloud_event_schema = Polyn::CloudEvent.to_h
         validate_schema(cloud_event_schema, event)
       end
 
-      def self.validate_data(nats, event, **opts)
+      def validate_data(event)
         type   = get_event_type(event)
         return type if type.is_a?(Polyn::Errors::Error)
 
-        schema = get_schema(nats, type, **opts)
+        schema = get_schema(type)
         return schema if schema.is_a?(Polyn::Errors::Error)
 
         validate_schema(schema, event)
       end
 
-      def self.validate_schema(schema, event)
+      def validate_schema(schema, event)
         schema = JSONSchemer.schema(schema)
         errors = schema.validate(event).to_a
         errors = format_schema_errors(errors)
@@ -101,7 +105,7 @@ module Polyn
         errors
       end
 
-      def self.get_event_type(event)
+      def get_event_type(event)
         if event["type"]
           Polyn::Naming.trim_domain_prefix(event["type"])
         else
@@ -111,25 +115,21 @@ module Polyn
         end
       end
 
-      def self.get_schema(nats, type, **opts)
-        Polyn::SchemaStore.get(nats, type, name: store_name(**opts))
+      def get_schema(type)
+        @schema_store.get(type)
       end
 
-      def self.format_schema_errors(errors)
+      def format_schema_errors(errors)
         errors.map do |error|
           "Property: `#{error['data_pointer']}` - #{error['type']} - #{error['details']}"
         end
       end
 
-      def self.combined_error_message(event, errors)
+      def combined_error_message(event, errors)
         [
           "Polyn event #{event['id']} from #{event['source']} is not valid",
           "Event data: #{event.inspect}",
         ].concat(errors).join("\n")
-      end
-
-      def self.store_name(**opts)
-        opts[:store_name] || Polyn::SchemaStore.store_name
       end
     end
   end

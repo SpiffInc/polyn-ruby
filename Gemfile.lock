@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    polyn (0.1.0)
+    polyn (0.2.0)
       json_schemer (~> 0.2)
       nats-pure (~> 2.0)
       yard (~> 0.9)
@@ -62,7 +62,9 @@ GEM
     timecop (0.9.4)
     unicode-display_width (2.1.0)
     uri_template (0.7.0)
-    yard (0.9.26)
+    webrick (1.7.0)
+    yard (0.9.28)
+      webrick (~> 1.7.0)
 
 PLATFORMS
   arm64-darwin-20
