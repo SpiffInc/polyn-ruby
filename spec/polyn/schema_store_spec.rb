@@ -25,6 +25,16 @@ RSpec.describe Polyn::SchemaStore do
         described_class.new(nats, name: "BAD_STORE")
       end.to raise_error(Polyn::Errors::SchemaError)
     end
+
+    it "loads all schemas" do
+      js.key_value(store_name).put("foo.bar.v1", "{\"foo\":\"bar\"}")
+      js.key_value(store_name).put("bar.baz.v1", "{\"bar\":\"baz\"}")
+      store = described_class.new(nats, name: store_name)
+      expect(store.schemas).to eq({
+        "foo.bar.v1" => "{\"foo\":\"bar\"}",
+        "bar.baz.v1" => "{\"bar\":\"baz\"}",
+      })
+    end
   end
 
   describe "#save" do

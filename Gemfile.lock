@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    polyn (0.2.0)
+    polyn (0.2.1)
       json_schemer (~> 0.2)
       nats-pure (~> 2.0)
       yard (~> 0.9)
