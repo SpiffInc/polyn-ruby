@@ -34,6 +34,7 @@ require "polyn/nats/jetstream/api/consumer_config"
 require "polyn/pull_subscriber"
 require "polyn/schema_store"
 require "polyn/serializers/json"
+require "polyn/testing/mock_nats"
 require "polyn/utils/utils"
 require "polyn/version"
 
@@ -148,7 +149,7 @@ module Polyn
     # NATS connection class to use based on environment
     def nats_class
       if Polyn.configuration.polyn_env == "test"
-        Polyn::MockNats
+        Polyn::Testing::MockNats
       else
         Polyn::Nats
       end
