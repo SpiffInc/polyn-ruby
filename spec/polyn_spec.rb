@@ -6,6 +6,8 @@ RSpec.describe Polyn do
   let(:nats) { NATS.connect }
   let(:js) { nats.jetstream }
   let(:store_name) { "POLYN_TEST_STORE" }
+  let(:exporter) { EXPORTER }
+  let(:spans) { exporter.finished_spans }
   let(:schema_store) do
     Polyn::SchemaStore.new(nats, name: store_name, schemas: {
       "calc.mult.v1" => JSON.generate({
@@ -51,6 +53,21 @@ RSpec.describe Polyn do
       expect(event["source"]).to eq("com:test:user:backend")
       expect(event["data"]["a"]).to eq(1)
       expect(event["data"]["b"]).to eq(2)
+
+      # Tracing
+      span = spans.first
+
+      expect(spans.length).to eq(1)
+      expect(span.name).to eq("calc.mult.v1 send")
+      expect(span.kind).to eq("PRODUCER")
+      expect(span.attributes).to eq({
+        "messaging.system"                     => "NATS",
+        "messaging.destination"                => "calc.mult.v1",
+        "messaging.protocol"                   => "Polyn",
+        "messaging.url"                        => nats.uri.to_s,
+        "messaging.message_id"                 => event["id"],
+        "messaging.message_payload_size_bytes" => msg.data.bytesize,
+      })
     end
 
     it "adds triggered_by to polyntrace" do

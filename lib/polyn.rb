@@ -21,6 +21,7 @@
 require "json_schemer"
 require "json"
 require "nats/client"
+require "opentelemetry"
 require "securerandom"
 
 require "polyn/configuration"
@@ -83,22 +84,35 @@ module Polyn
     # @option options [String] :reply_to - Reply to a specific topic
     # @option options [String] :header - Headers to include in the message
     def publish(type, data, **opts)
-      event = Event.new({
-        type:         type,
-        source:       opts[:source],
-        data:         data,
-        triggered_by: opts[:triggered_by],
-      })
+      provider = ::OpenTelemetry.tracer_provider
+      tracer   = provider.tracer("polyn", Polyn::VERSION)
+      tracer.in_span("#{type} send", kind: "PRODUCER") do |span|
+        event = Event.new({
+          type:         type,
+          source:       opts[:source],
+          data:         data,
+          triggered_by: opts[:triggered_by],
+        })
 
-      # Ensure accidental message duplication doesn't happen
-      # https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication
-      msg_id_header = { "Nats-Msg-Id" => event.id }
-      header        = opts.fetch(:header, {})
-      header        = msg_id_header.merge(header)
+        # Ensure accidental message duplication doesn't happen
+        # https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication
+        msg_id_header = { "Nats-Msg-Id" => event.id }
+        header        = opts.fetch(:header, {})
+        header        = msg_id_header.merge(header)
 
-      json = @serializer.serialize!(event)
+        json = @serializer.serialize!(event)
 
-      @nats.publish(type, json, opts[:reply_to], header: header)
+        span.add_attributes({
+          "messaging.system"                     => "NATS",
+          "messaging.destination"                => type,
+          "messaging.protocol"                   => "Polyn",
+          "messaging.url"                        => @nats.nats.uri.to_s,
+          "messaging.message_id"                 => event.id,
+          "messaging.message_payload_size_bytes" => json.bytesize,
+        })
+
+        @nats.publish(type, json, opts[:reply_to], header: header)
+      end
     end
 
     ## Create subscription which is dispatched asynchronously
