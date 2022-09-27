@@ -178,6 +178,22 @@ RSpec.describe Polyn do
       expect(msgs[0].data).to be_a(Polyn::Event)
       expect(msgs[0].data.data[:a]).to eq(1)
       expect(msgs[0].data.data[:b]).to eq(2)
+
+      # Tracing
+      span = spans[1]
+
+      expect(spans.length).to eq(2)
+      expect(span.name).to eq("calc.mult.v1 receive")
+      expect(span.kind).to eq("CONSUMER")
+      expect(span.parent_span_id).to eq(spans[0].span_id)
+      expect(span.attributes).to eq({
+        "messaging.system"                     => "NATS",
+        "messaging.destination"                => "calc.mult.v1",
+        "messaging.protocol"                   => "Polyn",
+        "messaging.url"                        => nats.uri.to_s,
+        "messaging.message_id"                 => msgs[0].data.id,
+        "messaging.message_payload_size_bytes" => JSON.generate(msgs[0].data.to_h).bytesize,
+      })
     end
   end
 

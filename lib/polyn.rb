@@ -112,9 +112,16 @@ module Polyn
     # @option options [String] :pending_bytes_limit
     def subscribe(type, opts = {}, &callback)
       @nats.subscribe(type, opts) do |msg|
-        event    = @serializer.deserialize!(msg.data)
-        msg.data = event
-        callback.call(msg)
+        connect_span_with_received_message(msg) do
+          tracer.in_span("#{type} receive", kind: "CONSUMER") do |span|
+            event    = @serializer.deserialize!(msg.data)
+
+            span.add_attributes(trace_span_attributes(type, event, msg.data))
+
+            msg.data = event
+            callback.call(msg)
+          end
+        end
       end
     end
 
@@ -178,6 +185,11 @@ module Polyn
         "messaging.message_id"                 => event.id,
         "messaging.message_payload_size_bytes" => payload.bytesize,
       }
+    end
+
+    def connect_span_with_received_message(msg, &block)
+      context = OpenTelemetry.propagation.extract(msg.header)
+      ::OpenTelemetry::Context.with_current(context, &block)
     end
   end
 end
