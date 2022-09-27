@@ -91,6 +91,7 @@ module Polyn
           type:         type,
           source:       opts[:source],
           data:         data,
+          polyntrace:   span.context,
           triggered_by: opts[:triggered_by],
         })
 

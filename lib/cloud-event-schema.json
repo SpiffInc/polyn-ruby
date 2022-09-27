@@ -13,7 +13,7 @@
     "source": {
       "description": "Identifies the context in which an event happened.",
       "$ref": "#/definitions/sourcedef",
-      "examples" : [
+      "examples": [
         "https://github.com/cloudevents",
         "mailto:cncf-wg-serverless@lists.cncf.io",
         "urn:uuid:6e8bc430-9c3a-11d9-9669-0800200c9a66",
@@ -32,7 +32,7 @@
     "type": {
       "description": "Describes the type of event related to the originating occurrence.",
       "$ref": "#/definitions/typedef",
-      "examples" : [
+      "examples": [
         "com.github.pull_request.opened",
         "com.example.object.deleted.v2"
       ]
@@ -92,19 +92,20 @@
     },
     "polyntrace": {
       "$ref": "#/definitions/polyntracedef",
-      "description": "Previous events that led to this one",
-      "examples": [
-        [
-          {
-            "type": "<topic>",
-            "time": "2018-04-05T17:31:00Z",
-            "id": "<uuid>"
-          }
-        ]
-      ]
+      "description": "Trace information that can be used to build a distributed trace",
+      "examples": {
+        "trace_id": "0x5b8aa5a2d2c872e8321cf37308d69df2",
+        "span_id": "0x5fb397be34d26b51",
+        "tracestate": {}
+      }
     }
   },
-  "required": ["id", "source", "specversion", "type"],
+  "required": [
+    "id",
+    "source",
+    "specversion",
+    "type"
+  ],
   "definitions": {
     "iddef": {
       "type": "string",
@@ -124,28 +125,50 @@
       "minLength": 1
     },
     "datacontenttypedef": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "minLength": 1
     },
     "dataschemadef": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "uri",
       "minLength": 1
     },
     "subjectdef": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "minLength": 1
     },
     "timedef": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "date-time",
       "minLength": 1
     },
     "datadef": {
-      "type": ["object", "string", "number", "array", "boolean", "null"]
+      "type": [
+        "object",
+        "string",
+        "number",
+        "array",
+        "boolean",
+        "null"
+      ]
     },
     "data_base64def": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "contentEncoding": "base64"
     },
     "polyndatadef": {
@@ -161,27 +184,29 @@
           "type": "string"
         }
       },
-      "required": ["clientlang", "clientlangversion", "clientversion"]
+      "required": [
+        "clientlang",
+        "clientlangversion",
+        "clientversion"
+      ]
     },
     "polyntracedef": {
-      "type" : "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string"
-          },
-          "time": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "id"  : {
-            "type": "string",
-            "format": "uuid"
-          }
+      "type": "object",
+      "properties": {
+        "trace_id": {
+          "type": "string"
         },
-        "required": ["type", "time", "id"]
-      }
+        "span_id": {
+          "type": "string"
+        },
+        "tracestate": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "trace_id",
+        "span_id"
+      ]
     }
   }
 }

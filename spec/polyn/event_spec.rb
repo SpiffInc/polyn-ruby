@@ -166,46 +166,28 @@ RSpec.describe Polyn::Event do
   end
 
   describe "#polyntrace" do
-    it "defaults polyntrace to empty list" do
-      expect(subject.polyntrace).to eq([])
+    it "defaults polyntrace to empty object" do
+      expect(subject.polyntrace).to eq({})
     end
 
-    it "adds polyntrace from triggering event" do
-      first = Polyn::Event.new(
-        type: "first.event",
-        data: {
-          foo: "bar",
-        },
-      )
+    it "adds polyntrace from opentelemetry SpanContext" do
+      provider = ::OpenTelemetry.tracer_provider
+      tracer   = provider.tracer("polyn", Polyn::VERSION)
+      tracer.in_span("first.event send", kind: "PRODUCER") do |span|
+        event = Polyn::Event.new(
+          type:       "first.event",
+          data:       {
+            foo: "bar",
+          },
+          polyntrace: span.context,
+        )
 
-      second = Polyn::Event.new(
-        type:         "second.event",
-        data:         {
-          foo: "bar",
-        },
-        triggered_by: first,
-      )
-
-      third = Polyn::Event.new(
-        type:         "third.event",
-        data:         {
-          foo: "bar",
-        },
-        triggered_by: second,
-      )
-
-      expect(third.polyntrace).to eq([
-                                       {
-                                         id:   first.id,
-                                         type: first.type,
-                                         time: first.time,
-                                       },
-                                       {
-                                         id:   second.id,
-                                         type: second.type,
-                                         time: second.time,
-                                       },
-                                     ])
+        expect(event.polyntrace).to eq({
+          trace_id:   span.context.hex_trace_id,
+          span_id:    span.context.hex_span_id,
+          tracestate: {},
+        })
+      end
     end
   end
 

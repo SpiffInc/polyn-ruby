@@ -57,6 +57,12 @@ RSpec.describe Polyn do
       # Tracing
       span = spans.first
 
+      expect(event["polyntrace"]).to eq({
+        "trace_id"   => span.hex_trace_id,
+        "span_id"    => span.hex_span_id,
+        "tracestate" => {},
+      })
+
       expect(spans.length).to eq(1)
       expect(span.name).to eq("calc.mult.v1 send")
       expect(span.kind).to eq("PRODUCER")

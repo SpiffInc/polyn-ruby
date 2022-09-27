@@ -76,7 +76,7 @@ module Polyn
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
       @datacontenttype = hash.fetch(:datacontenttype, "application/json")
-      @polyntrace      = self.class.build_polyntrace(hash[:triggered_by])
+      @polyntrace      = self.class.build_polyntrace(hash[:polyntrace])
       @polyndata       = {
         clientlang:        "ruby",
         clientlangversion: RUBY_VERSION,
@@ -120,15 +120,15 @@ module Polyn
     end
 
     ##
-    # Use a triggering event to build the polyntrace of a new event
-    def self.build_polyntrace(triggered_by)
-      return [] unless triggered_by
+    # Use a Tracing SpanContext to supply information for a distributed trace
+    def self.build_polyntrace(spancontext)
+      return {} unless spancontext
 
-      triggered_by.polyntrace.concat([{
-        id:   triggered_by.id,
-        type: triggered_by.type,
-        time: triggered_by.time,
-      }])
+      {
+        trace_id:   spancontext.hex_trace_id,
+        span_id:    spancontext.hex_span_id,
+        tracestate: spancontext.tracestate.to_h,
+      }
     end
 
     def self.domain
