@@ -166,8 +166,20 @@ RSpec.describe Polyn::Event do
   end
 
   describe "#polyntrace" do
-    it "defaults polyntrace to empty object" do
-      expect(subject.polyntrace).to eq({})
+    it "defaults polyntrace to empty" do
+      expect(subject.polyntrace).to eq(nil)
+    end
+
+    it "can send in already made polyntrace" do
+      event = Polyn::Event.new(
+        type:       "first.event",
+        data:       {
+          foo: "bar",
+        },
+        polyntrace: { trace_id: "foo", span_id: "foo" },
+      )
+
+      expect(event.polyntrace).to eq({ trace_id: "foo", span_id: "foo" })
     end
 
     it "adds polyntrace from opentelemetry SpanContext" do

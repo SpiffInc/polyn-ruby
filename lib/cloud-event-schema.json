@@ -191,7 +191,7 @@
       ]
     },
     "polyntracedef": {
-      "type": "object",
+      "type": ["object", "null"],
       "properties": {
         "trace_id": {
           "type": "string"
