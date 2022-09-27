@@ -89,15 +89,6 @@
           "clientversion": "0.1.0"
         }
       ]
-    },
-    "polyntrace": {
-      "$ref": "#/definitions/polyntracedef",
-      "description": "Trace information that can be used to build a distributed trace",
-      "examples": {
-        "trace_id": "0x5b8aa5a2d2c872e8321cf37308d69df2",
-        "span_id": "0x5fb397be34d26b51",
-        "tracestate": {}
-      }
     }
   },
   "required": [
@@ -188,24 +179,6 @@
         "clientlang",
         "clientlangversion",
         "clientversion"
-      ]
-    },
-    "polyntracedef": {
-      "type": ["object", "null"],
-      "properties": {
-        "trace_id": {
-          "type": "string"
-        },
-        "span_id": {
-          "type": "string"
-        },
-        "tracestate": {
-          "type": "object"
-        }
-      },
-      "required": [
-        "trace_id",
-        "span_id"
       ]
     }
   }

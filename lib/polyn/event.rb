@@ -76,7 +76,6 @@ module Polyn
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
       @datacontenttype = hash.fetch(:datacontenttype, "application/json")
-      @polyntrace      = self.class.build_polyntrace(hash[:polyntrace])
       @polyndata       = {
         clientlang:        "ruby",
         clientlangversion: RUBY_VERSION,
@@ -93,7 +92,6 @@ module Polyn
         "time"            => time,
         "data"            => Utils::Hash.deep_stringify_keys(data),
         "datacontenttype" => datacontenttype,
-        "polyntrace"      => Utils::Hash.deep_stringify_keys(polyntrace),
         "polyndata"       => Utils::Hash.deep_stringify_keys(polyndata),
       }
     end
@@ -117,21 +115,6 @@ module Polyn
     def self.full_type(type)
       Polyn::Naming.validate_event_type!(type)
       "#{domain}.#{Polyn::Naming.trim_domain_prefix(type)}"
-    end
-
-    ##
-    # Use a Tracing SpanContext to supply information for a distributed trace
-    def self.build_polyntrace(spancontext)
-      return nil unless spancontext
-      return spancontext unless spancontext.is_a?(::OpenTelemetry::Trace::SpanContext)
-
-      # The trace_id and span_id are a binary string, so we get the hex version out
-      # here so it can be JSON encoded
-      {
-        trace_id:   spancontext.hex_trace_id,
-        span_id:    spancontext.hex_span_id,
-        tracestate: spancontext.tracestate.to_h,
-      }
     end
 
     def self.domain

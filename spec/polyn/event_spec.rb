@@ -165,44 +165,6 @@ RSpec.describe Polyn::Event do
     end
   end
 
-  describe "#polyntrace" do
-    it "defaults polyntrace to empty" do
-      expect(subject.polyntrace).to eq(nil)
-    end
-
-    it "can send in already made polyntrace" do
-      event = Polyn::Event.new(
-        type:       "first.event",
-        data:       {
-          foo: "bar",
-        },
-        polyntrace: { trace_id: "foo", span_id: "foo" },
-      )
-
-      expect(event.polyntrace).to eq({ trace_id: "foo", span_id: "foo" })
-    end
-
-    it "adds polyntrace from opentelemetry SpanContext" do
-      provider = ::OpenTelemetry.tracer_provider
-      tracer   = provider.tracer("polyn", Polyn::VERSION)
-      tracer.in_span("first.event send", kind: "PRODUCER") do |span|
-        event = Polyn::Event.new(
-          type:       "first.event",
-          data:       {
-            foo: "bar",
-          },
-          polyntrace: span.context,
-        )
-
-        expect(event.polyntrace).to eq({
-          trace_id:   span.context.hex_trace_id,
-          span_id:    span.context.hex_span_id,
-          tracestate: {},
-        })
-      end
-    end
-  end
-
   describe "#polyndata" do
     it "has client information" do
       expect(subject.polyndata[:clientlang]).to eq("ruby")

@@ -57,11 +57,8 @@ RSpec.describe Polyn do
       # Tracing
       span = spans.first
 
-      expect(event["polyntrace"]).to eq({
-        "trace_id"   => span.hex_trace_id,
-        "span_id"    => span.hex_span_id,
-        "tracestate" => {},
-      })
+      # https://www.w3.org/TR/trace-context/#traceparent-header
+      expect(msg.header["traceparent"]).to eq("00-#{span.hex_trace_id}-#{span.hex_span_id}-01")
 
       expect(spans.length).to eq(1)
       expect(span.name).to eq("calc.mult.v1 send")
@@ -76,25 +73,25 @@ RSpec.describe Polyn do
       })
     end
 
-    it "adds triggered_by to polyntrace" do
-      first_event = Polyn::Event.new({ type: "first.event", data: "foo" })
+    # it "adds triggered_by to polyntrace" do
+    #   first_event = Polyn::Event.new({ type: "first.event", data: "foo" })
 
-      subject.publish("calc.mult.v1", {
-        a: 1,
-        b: 2,
-      }, triggered_by: first_event)
+    #   subject.publish("calc.mult.v1", {
+    #     a: 1,
+    #     b: 2,
+    #   }, triggered_by: first_event)
 
-      msg = get_message("calc.mult.v1", "my_consumer", "CALC")
+    #   msg = get_message("calc.mult.v1", "my_consumer", "CALC")
 
-      event = JSON.parse(msg.data)
-      expect(event["polyntrace"]).to eq([
-                                          {
-                                            "id"   => first_event.id,
-                                            "type" => first_event.type,
-                                            "time" => first_event.time,
-                                          },
-                                        ])
-    end
+    #   event = JSON.parse(msg.data)
+    #   expect(event["polyntrace"]).to eq([
+    #                                       {
+    #                                         "id"   => first_event.id,
+    #                                         "type" => first_event.type,
+    #                                         "time" => first_event.time,
+    #                                       },
+    #                                     ])
+    # end
 
     it "always includes a Nats-Msg-Id header" do
       subject.publish("calc.mult.v1", {
@@ -107,7 +104,7 @@ RSpec.describe Polyn do
       expect(msg.header).to eq({ "Nats-Msg-Id" => JSON.parse(msg.data)["id"] })
     end
 
-    it "can include a header" do
+    it "can include a custom header" do
       subject.publish("calc.mult.v1", {
         a: 1,
         b: 2,
@@ -115,10 +112,9 @@ RSpec.describe Polyn do
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
 
-      expect(msg.header).to eq({
-        "Nats-Msg-Id"  => JSON.parse(msg.data)["id"],
-        "a header key" => "a header value",
-      })
+      expect(msg.header["a header key"]).to eq("a header value")
+      expect(msg.header["Nats-Msg-Id"]).to eq(JSON.parse(msg.data)["id"])
+      expect(msg.header["traceparent"]).to be_truthy
     end
 
     it "raises if msg doesn't conform to schema" do
