@@ -99,15 +99,20 @@ module Polyn
     ##
     # Get the Event `source` prefixed with reverse domain name
     def self.full_source(source = nil)
-      root = Polyn.configuration.source_root
-      name = Polyn::Naming.dot_to_colon("#{domain}:#{root}")
+      root    = Polyn.configuration.source_root
+      parts   = [domain, root]
+      combine = lambda do |items|
+        items.map { |part| Polyn::Naming.dot_to_colon(part) }.join(":")
+      end
+      name    = combine.call(parts)
 
       if source
         Polyn::Naming.validate_source_name!(source)
-        "#{name}:#{Polyn::Naming.dot_to_colon(source)}"
-      else
-        name
+        source = source.gsub(/(#{name}){1}:?/, "")
+        parts << source unless source.empty?
       end
+
+      combine.call(parts)
     end
 
     ##

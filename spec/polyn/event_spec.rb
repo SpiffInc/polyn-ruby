@@ -114,6 +114,26 @@ RSpec.describe Polyn::Event do
         },
       ).source).to eq("com:test:user:backend")
     end
+
+    it "does not duplicate source root" do
+      expect(Polyn::Event.new(
+        type:   "test.event",
+        source: "com:test:user:backend",
+        data:   {
+          foo: "bar",
+        },
+      ).source).to eq("com:test:user:backend")
+    end
+
+    it "does not duplicate source root with custom" do
+      expect(Polyn::Event.new(
+        type:   "test.event",
+        source: "com:test:user:backend:test:service",
+        data:   {
+          foo: "bar",
+        },
+      ).source).to eq("com:test:user:backend:test:service")
+    end
   end
 
   describe "#full_source" do
