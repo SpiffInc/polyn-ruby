@@ -165,6 +165,12 @@ Despite mocking some NATS functionality you will still need a running nats-serve
 When the tests start it will load all your schemas. The tests themselves will also use the running server to verify
 stream and consumer configuration information. This hybrid mocking approach is intended to give isolation and reliability while also ensuring correct integration.
 
+## Observability
+
+### Tracing
+
+Polyn uses [OpenTelemetry](https://opentelemetry.io/) to create distributed traces that will connect sent and received events in different services. Your application will need the [`opentelemetry-sdk` gem](https://opentelemetry.io/docs/instrumentation/ruby/getting-started/) installed to collect the trace information.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run
