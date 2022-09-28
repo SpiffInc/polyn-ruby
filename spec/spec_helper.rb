@@ -24,7 +24,8 @@ Polyn.configure do |config|
   config.source_root = "user.backend"
 end
 
-# Setup the test-only SDK for OpenTelemetry to capture spans
+# Setup the test-only SDK for OpenTelemetry to capture spans. The Exporter is what
+# will actually record the spans and allow us to access them
 EXPORTER       = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
 span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
 
