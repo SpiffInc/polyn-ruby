@@ -35,9 +35,12 @@ RSpec.describe Polyn do
 
   describe "#publish" do
     before(:each) do
-      js.delete_stream("CALC")
       js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
       js.add_consumer("CALC", durable_name: "my_consumer")
+    end
+
+    after(:each) do
+      js.delete_stream("CALC")
     end
 
     it "publishes a message" do
@@ -140,6 +143,7 @@ RSpec.describe Polyn do
       expect do
         subject.pull_subscribe("calc mult v1")
       end.to raise_error(Polyn::Errors::ValidationError)
+      js.delete_stream("CALC")
     end
 
     it "raises if optional source invalid" do
@@ -148,6 +152,7 @@ RSpec.describe Polyn do
       expect do
         subject.pull_subscribe("calc.mult.v1", source: "foo bar")
       end.to raise_error(Polyn::Errors::ValidationError)
+      js.delete_stream("CALC")
     end
 
     it "raises if consumer was not created in NATS" do
@@ -160,6 +165,7 @@ RSpec.describe Polyn do
       js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
       js.add_consumer("CALC", durable_name: "user_backend_calc_mult_v1")
       expect(subject.pull_subscribe("calc.mult.v1")).to be_a(Polyn::PullSubscriber)
+      js.delete_stream("CALC")
     end
   end
 
