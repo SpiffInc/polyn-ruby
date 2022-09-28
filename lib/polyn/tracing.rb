@@ -58,12 +58,16 @@ module Polyn
       tracer.in_span("#{type} process", kind: "CONSUMER", &block)
     end
 
-    def self.convert_links(links)
-      links.map { |link| create_span_link(link) } if links
-    end
+    class << self
+      private
 
-    def self.create_span_link(span)
-      ::OpenTelemetry::Trace::Link.new(span.context)
+      def convert_links(links)
+        links.map { |link| create_span_link(link) } if links
+      end
+
+      def create_span_link(span)
+        ::OpenTelemetry::Trace::Link.new(span.context)
+      end
     end
   end
 end
