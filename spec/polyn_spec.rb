@@ -82,26 +82,6 @@ RSpec.describe Polyn do
       })
     end
 
-    # it "adds triggered_by to polyntrace" do
-    #   first_event = Polyn::Event.new({ type: "first.event", data: "foo" })
-
-    #   subject.publish("calc.mult.v1", {
-    #     a: 1,
-    #     b: 2,
-    #   }, triggered_by: first_event)
-
-    #   msg = get_message("calc.mult.v1", "my_consumer", "CALC")
-
-    #   event = JSON.parse(msg.data)
-    #   expect(event["polyntrace"]).to eq([
-    #                                       {
-    #                                         "id"   => first_event.id,
-    #                                         "type" => first_event.type,
-    #                                         "time" => first_event.time,
-    #                                       },
-    #                                     ])
-    # end
-
     it "always includes a Nats-Msg-Id header" do
       subject.publish("calc.mult.v1", {
         a: 1,
