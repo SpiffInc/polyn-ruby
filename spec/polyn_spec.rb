@@ -25,24 +25,27 @@ RSpec.describe Polyn do
     })
   end
 
+  before(:each) do
+    exporter.reset
+  end
+
   subject do
     described_class.connect(nats, store_name: store_name, schema_store: schema_store)
   end
 
   describe "#publish" do
     before(:each) do
+      js.delete_stream("CALC")
       js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
       js.add_consumer("CALC", durable_name: "my_consumer")
     end
 
-    after(:each) do
-      js.delete_stream("CALC")
-    end
-
     it "publishes a message" do
+      now = Time.now.iso8601
       subject.publish("calc.mult.v1", {
-        a: 1,
-        b: 2,
+        a:         1,
+        b:         2,
+        timestamp: now,
       })
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
@@ -53,9 +56,12 @@ RSpec.describe Polyn do
       expect(event["source"]).to eq("com:test:user:backend")
       expect(event["data"]["a"]).to eq(1)
       expect(event["data"]["b"]).to eq(2)
+      expect(event["data"]["timestamp"]).to eq(now)
 
       # Tracing
       span = spans.first
+
+      expect(spans.length).to eq(1)
 
       # https://www.w3.org/TR/trace-context/#traceparent-header
       expect(msg.header["traceparent"]).to eq("00-#{span.hex_trace_id}-#{span.hex_span_id}-01")
@@ -101,7 +107,7 @@ RSpec.describe Polyn do
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
 
-      expect(msg.header).to eq({ "Nats-Msg-Id" => JSON.parse(msg.data)["id"] })
+      expect(msg.header["Nats-Msg-Id"]).to eq(JSON.parse(msg.data)["id"])
     end
 
     it "can include a custom header" do
