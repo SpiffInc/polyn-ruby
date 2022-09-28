@@ -11,8 +11,7 @@ module Polyn
     # is more than the `source_root`
     def initialize(fields)
       @nats          = fields.fetch(:nats)
-      @type          = fields.fetch(:type)
-      @type          = Polyn::Naming.trim_domain_prefix(@type)
+      @type          = Polyn::Naming.trim_domain_prefix(fields.fetch(:type))
       @consumer_name = Polyn::Naming.consumer_name(@type, fields[:source])
       @stream        = @nats.jetstream.find_stream_name_by_subject(@type)
       self.class.validate_consumer_exists!(@nats, @stream, @consumer_name)
@@ -39,18 +38,47 @@ module Polyn
     # @option params [Float] :timeout Duration of the fetch request before it expires.
     # @return [Array<NATS::Msg>]
     def fetch(batch = 1, params = {})
-      msgs = @psub.fetch(batch, params)
-      msgs.map do |msg|
-        msg   = Polyn::Nats::Msg.new(msg)
-        event = @serializer.deserialize(msg.data)
-        if event.is_a?(Polyn::Errors::Error)
-          msg.term
-          raise event
+      start_processing_span do |process_span|
+        msgs = @psub.fetch(batch, params)
+        msgs.map do |msg|
+          # Each message will have its parent_span connected to the
+          # published message. Each message will also have a `link` to the
+          # span for processing the entire batch
+          Polyn.connect_span_with_received_message(msg) do
+            Polyn.tracer.in_span("#{@type} receive", kind: "CONSUMER",
+              links: [create_span_link(process_span)]) do |span|
+              updated_msg = process_message(msg)
+              span.add_attributes(
+                Polyn.trace_span_attributes(@nats, @type, updated_msg.data, msg.data),
+              )
+              updated_msg
+            end
+          end
         end
-
-        msg.data = event
-        msg
       end
+    end
+
+    private
+
+    def start_processing_span(&block)
+      Polyn.tracer.in_span("#{@type} process", kind: "CONSUMER", &block)
+    end
+
+    def process_message(msg)
+      msg   = msg.clone
+      msg   = Polyn::Nats::Msg.new(msg)
+      event = @serializer.deserialize(msg.data)
+      if event.is_a?(Polyn::Errors::Error)
+        msg.term
+        raise event
+      end
+
+      msg.data = event
+      msg
+    end
+
+    def create_span_link(span)
+      ::OpenTelemetry::Trace::Link.new(span.context)
     end
   end
 end
