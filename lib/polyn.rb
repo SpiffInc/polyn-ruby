@@ -169,12 +169,10 @@ module Polyn
     end
 
     def add_headers(headers, event)
+      Polyn::Tracing.trace_header(headers)
       # Ensure accidental message duplication doesn't happen
       # https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication
-      msg_id_header = { "Nats-Msg-Id" => event.id }
-      # Add a `traceparent` header so subscribers are part of the same trace
-      OpenTelemetry.propagation.inject(headers)
-      msg_id_header.merge(headers)
+      { "Nats-Msg-Id" => event.id }.merge(headers)
     end
   end
 end

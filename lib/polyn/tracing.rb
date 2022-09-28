@@ -39,6 +39,13 @@ module Polyn
     end
 
     ##
+    # Add a `traceparent` header to the headers for a message so that the
+    # subscribers can be connected with it
+    def self.trace_header(headers = {})
+      ::OpenTelemetry.propagation.inject(headers)
+    end
+
+    ##
     # Start a span for publishing an event
     def self.publish_span(type, &block)
       tracer.in_span("#{type} send", kind: "PRODUCER", &block)
