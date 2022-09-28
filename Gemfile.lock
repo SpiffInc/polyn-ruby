@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    polyn (0.2.2)
+    polyn (0.3.0)
       json_schemer (~> 0.2)
       nats-pure (~> 2.0)
       opentelemetry-api (~> 1.1)
