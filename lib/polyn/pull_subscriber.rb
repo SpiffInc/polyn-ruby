@@ -38,31 +38,23 @@ module Polyn
     # @option params [Float] :timeout Duration of the fetch request before it expires.
     # @return [Array<NATS::Msg>]
     def fetch(batch = 1, params = {})
-      start_processing_span do |process_span|
+      Polyn::Tracing.processing_span(@type) do |process_span|
         msgs = @psub.fetch(batch, params)
         msgs.map do |msg|
-          # Each message will have its parent_span connected to the
-          # published message. Each message will also have a `link` to the
-          # span for processing the entire batch
-          Polyn.connect_span_with_received_message(msg) do
-            Polyn.tracer.in_span("#{@type} receive", kind: "CONSUMER",
-              links: [create_span_link(process_span)]) do |span|
-              updated_msg = process_message(msg)
-              span.add_attributes(
-                Polyn.trace_span_attributes(@nats, @type, updated_msg.data, msg.data),
-              )
-              updated_msg
-            end
+          Polyn::Tracing.subscribe_span(@type, msg, links: [process_span]) do |span|
+            updated_msg = process_message(msg)
+            Polyn::Tracing.span_attributes(span,
+              nats:    @nats,
+              type:    @type,
+              event:   updated_msg.data,
+              payload: msg.data)
+            updated_msg
           end
         end
       end
     end
 
     private
-
-    def start_processing_span(&block)
-      Polyn.tracer.in_span("#{@type} process", kind: "CONSUMER", &block)
-    end
 
     def process_message(msg)
       msg   = msg.clone
@@ -75,10 +67,6 @@ module Polyn
 
       msg.data = event
       msg
-    end
-
-    def create_span_link(span)
-      ::OpenTelemetry::Trace::Link.new(span.context)
     end
   end
 end

@@ -36,6 +36,7 @@ require "polyn/pull_subscriber"
 require "polyn/schema_store"
 require "polyn/serializers/json"
 require "polyn/testing/mock_nats"
+require "polyn/tracing"
 require "polyn/utils/utils"
 require "polyn/version"
 
@@ -62,31 +63,6 @@ module Polyn
     Conn.new(nats, **opts)
   end
 
-  def self.tracer
-    ::OpenTelemetry.tracer_provider.tracer("polyn", Polyn::VERSION)
-  end
-
-  def self.trace_span_attributes(nats, type, event, payload)
-    {
-      "messaging.system"                     => "NATS",
-      "messaging.destination"                => type,
-      "messaging.protocol"                   => "Polyn",
-      "messaging.url"                        => nats.uri.to_s,
-      "messaging.message_id"                 => event.id,
-      "messaging.message_payload_size_bytes" => payload.bytesize,
-    }
-  end
-
-  ##
-  # Uses the message header to extract trace information from the
-  # published message so the subscription handler can use it as
-  # the parent span. This will allow us to create a distributed
-  # trace between publications and subscriptions
-  def self.connect_span_with_received_message(msg, &block)
-    context = OpenTelemetry.propagation.extract(msg.header)
-    ::OpenTelemetry::Context.with_current(context, &block)
-  end
-
   ##
   # A Polyn connection to NATS
   class Conn
@@ -108,7 +84,7 @@ module Polyn
     # @option options [String] :reply_to - Reply to a specific topic
     # @option options [String] :header - Headers to include in the message
     def publish(type, data, **opts)
-      Polyn.tracer.in_span("#{type} send", kind: "PRODUCER") do |span|
+      Polyn::Tracing.publish_span(type) do |span|
         event = Event.new({
           type:   type,
           source: opts[:source],
@@ -117,7 +93,11 @@ module Polyn
 
         json = @serializer.serialize!(event)
 
-        span.add_attributes(Polyn.trace_span_attributes(@nats.nats, type, event, json))
+        Polyn::Tracing.span_attributes(span,
+          nats:    @nats.nats,
+          type:    type,
+          event:   event,
+          payload: json)
 
         header = add_headers(opts.fetch(:header, {}), event)
 
@@ -135,15 +115,17 @@ module Polyn
     # @option options [String] :pending_bytes_limit
     def subscribe(type, opts = {}, &callback)
       @nats.subscribe(type, opts) do |msg|
-        Polyn.connect_span_with_received_message(msg) do
-          Polyn.tracer.in_span("#{type} receive", kind: "CONSUMER") do |span|
-            event    = @serializer.deserialize!(msg.data)
+        Polyn::Tracing.subscribe_span(type, msg) do |span|
+          event    = @serializer.deserialize!(msg.data)
 
-            span.add_attributes(Polyn.trace_span_attributes(@nats.nats, type, event, msg.data))
+          Polyn::Tracing.span_attributes(span,
+            nats:    @nats.nats,
+            type:    type,
+            event:   event,
+            payload: msg.data)
 
-            msg.data = event
-            callback.call(msg)
-          end
+          msg.data = event
+          callback.call(msg)
         end
       end
     end
