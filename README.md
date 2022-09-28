@@ -78,15 +78,6 @@ Add `:source` to make the `source` of the event more specific
 polyn.publish("user.created.v1", { name: "Mary" }, source: "new.users")
 ```
 
-Add `:triggered_by` to add a triggering event to the `polyntrace`
-
-```ruby
-polyn = Polyn.connect(nats)
-
-event = Polyn::Event.new
-polyn.publish("user.created.v1", { name: "Mary" }, triggered_by: event)
-```
-
 You can also include options of `:header` and/or `:reply_to` to passthrough to NATS
 
 ### Consuming a Stream

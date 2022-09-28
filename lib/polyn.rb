@@ -104,17 +104,15 @@ module Polyn
     # @param type [String] The type of event
     # @param data [any] The data to include in the event
     # @option options [String] :source - information to specify the source of the event
-    # @option options [String] :triggered_by - The event that triggered this one.
     # Will use information from the event to build up the `polyntrace` data
     # @option options [String] :reply_to - Reply to a specific topic
     # @option options [String] :header - Headers to include in the message
     def publish(type, data, **opts)
       Polyn.tracer.in_span("#{type} send", kind: "PRODUCER") do |span|
         event = Event.new({
-          type:         type,
-          source:       opts[:source],
-          data:         data,
-          triggered_by: opts[:triggered_by],
+          type:   type,
+          source: opts[:source],
+          data:   data,
         })
 
         json = @serializer.serialize!(event)
