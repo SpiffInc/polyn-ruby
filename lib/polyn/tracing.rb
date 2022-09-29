@@ -41,6 +41,7 @@ module Polyn
     ##
     # Add a `traceparent` header to the headers for a message so that the
     # subscribers can be connected with it
+    # https://www.w3.org/TR/trace-context/#traceparent-header
     def self.trace_header(headers = {})
       ::OpenTelemetry.propagation.inject(headers)
     end
