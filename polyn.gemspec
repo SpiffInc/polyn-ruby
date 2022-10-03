@@ -48,5 +48,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "json_schemer", "~> 0.2"
   spec.add_dependency "nats-pure", "~> 2.0"
+  spec.add_dependency "opentelemetry-api", "~> 1.1"
   spec.add_dependency "yard", "~> 0.9"
 end

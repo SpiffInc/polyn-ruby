@@ -3,6 +3,7 @@
 require "polyn"
 require "simplecov"
 require "timecop"
+require "opentelemetry/sdk"
 
 RSpec.configure do |config|
   SimpleCov.start
@@ -21,4 +22,13 @@ end
 Polyn.configure do |config|
   config.domain      = "com.test"
   config.source_root = "user.backend"
+end
+
+# Setup the test-only SDK for OpenTelemetry to capture spans. The Exporter is what
+# will actually record the spans and allow us to access them
+EXPORTER       = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
+span_processor = OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(EXPORTER)
+
+OpenTelemetry::SDK.configure do |c|
+  c.add_span_processor span_processor
 end

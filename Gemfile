@@ -30,3 +30,9 @@ gem "timecop"
 gem "json_schemer"
 # EventMachine nats repo doesn't support jetstream, only nats-pure
 gem "nats-pure", "~> 2.0"
+gem "opentelemetry-api", "~> 1.1"
+
+group :test do
+  gem "opentelemetry-sdk", "~> 1.2"
+end
+

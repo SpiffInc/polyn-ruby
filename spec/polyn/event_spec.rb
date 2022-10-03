@@ -114,6 +114,26 @@ RSpec.describe Polyn::Event do
         },
       ).source).to eq("com:test:user:backend")
     end
+
+    it "does not duplicate source root" do
+      expect(Polyn::Event.new(
+        type:   "test.event",
+        source: "com:test:user:backend",
+        data:   {
+          foo: "bar",
+        },
+      ).source).to eq("com:test:user:backend")
+    end
+
+    it "does not duplicate source root with custom" do
+      expect(Polyn::Event.new(
+        type:   "test.event",
+        source: "com:test:user:backend:test:service",
+        data:   {
+          foo: "bar",
+        },
+      ).source).to eq("com:test:user:backend:test:service")
+    end
   end
 
   describe "#full_source" do
@@ -162,50 +182,6 @@ RSpec.describe Polyn::Event do
   describe "#datacontenttype" do
     it "defaults to applicationjson" do
       expect(subject.datacontenttype).to eq("application/json")
-    end
-  end
-
-  describe "#polyntrace" do
-    it "defaults polyntrace to empty list" do
-      expect(subject.polyntrace).to eq([])
-    end
-
-    it "adds polyntrace from triggering event" do
-      first = Polyn::Event.new(
-        type: "first.event",
-        data: {
-          foo: "bar",
-        },
-      )
-
-      second = Polyn::Event.new(
-        type:         "second.event",
-        data:         {
-          foo: "bar",
-        },
-        triggered_by: first,
-      )
-
-      third = Polyn::Event.new(
-        type:         "third.event",
-        data:         {
-          foo: "bar",
-        },
-        triggered_by: second,
-      )
-
-      expect(third.polyntrace).to eq([
-                                       {
-                                         id:   first.id,
-                                         type: first.type,
-                                         time: first.time,
-                                       },
-                                       {
-                                         id:   second.id,
-                                         type: second.type,
-                                         time: second.time,
-                                       },
-                                     ])
     end
   end
 

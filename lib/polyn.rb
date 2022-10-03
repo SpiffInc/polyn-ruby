@@ -21,6 +21,7 @@
 require "json_schemer"
 require "json"
 require "nats/client"
+require "opentelemetry"
 require "securerandom"
 
 require "polyn/configuration"
@@ -35,6 +36,7 @@ require "polyn/pull_subscriber"
 require "polyn/schema_store"
 require "polyn/serializers/json"
 require "polyn/testing/mock_nats"
+require "polyn/tracing"
 require "polyn/utils/utils"
 require "polyn/version"
 
@@ -78,27 +80,29 @@ module Polyn
     # @param type [String] The type of event
     # @param data [any] The data to include in the event
     # @option options [String] :source - information to specify the source of the event
-    # @option options [String] :triggered_by - The event that triggered this one.
     # Will use information from the event to build up the `polyntrace` data
     # @option options [String] :reply_to - Reply to a specific topic
     # @option options [String] :header - Headers to include in the message
     def publish(type, data, **opts)
-      event = Event.new({
-        type:         type,
-        source:       opts[:source],
-        data:         data,
-        triggered_by: opts[:triggered_by],
-      })
+      Polyn::Tracing.publish_span(type) do |span|
+        event = Event.new({
+          type:   type,
+          source: opts[:source],
+          data:   data,
+        })
 
-      # Ensure accidental message duplication doesn't happen
-      # https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication
-      msg_id_header = { "Nats-Msg-Id" => event.id }
-      header        = opts.fetch(:header, {})
-      header        = msg_id_header.merge(header)
+        json = @serializer.serialize!(event)
 
-      json = @serializer.serialize!(event)
+        Polyn::Tracing.span_attributes(span,
+          nats:    @nats.nats,
+          type:    type,
+          event:   event,
+          payload: json)
 
-      @nats.publish(type, json, opts[:reply_to], header: header)
+        header = add_headers(opts.fetch(:header, {}), event)
+
+        @nats.publish(type, json, opts[:reply_to], header: header)
+      end
     end
 
     ## Create subscription which is dispatched asynchronously
@@ -111,9 +115,18 @@ module Polyn
     # @option options [String] :pending_bytes_limit
     def subscribe(type, opts = {}, &callback)
       @nats.subscribe(type, opts) do |msg|
-        event    = @serializer.deserialize!(msg.data)
-        msg.data = event
-        callback.call(msg)
+        Polyn::Tracing.subscribe_span(type, msg) do |span|
+          event    = @serializer.deserialize!(msg.data)
+
+          Polyn::Tracing.span_attributes(span,
+            nats:    @nats.nats,
+            type:    type,
+            event:   event,
+            payload: msg.data)
+
+          msg.data = event
+          callback.call(msg)
+        end
       end
     end
 
@@ -153,6 +166,13 @@ module Polyn
       else
         Polyn::Nats
       end
+    end
+
+    def add_headers(headers, event)
+      Polyn::Tracing.trace_header(headers)
+      # Ensure accidental message duplication doesn't happen
+      # https://docs.nats.io/using-nats/developer/develop_jetstream/model_deep_dive#message-deduplication
+      { "Nats-Msg-Id" => event.id }.merge(headers)
     end
   end
 end

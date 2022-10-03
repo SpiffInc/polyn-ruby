@@ -11,8 +11,7 @@ module Polyn
     # is more than the `source_root`
     def initialize(fields)
       @nats          = fields.fetch(:nats)
-      @type          = fields.fetch(:type)
-      @type          = Polyn::Naming.trim_domain_prefix(@type)
+      @type          = Polyn::Naming.trim_domain_prefix(fields.fetch(:type))
       @consumer_name = Polyn::Naming.consumer_name(@type, fields[:source])
       @stream        = @nats.jetstream.find_stream_name_by_subject(@type)
       self.class.validate_consumer_exists!(@nats, @stream, @consumer_name)
@@ -39,18 +38,35 @@ module Polyn
     # @option params [Float] :timeout Duration of the fetch request before it expires.
     # @return [Array<NATS::Msg>]
     def fetch(batch = 1, params = {})
-      msgs = @psub.fetch(batch, params)
-      msgs.map do |msg|
-        msg   = Polyn::Nats::Msg.new(msg)
-        event = @serializer.deserialize(msg.data)
-        if event.is_a?(Polyn::Errors::Error)
-          msg.term
-          raise event
+      Polyn::Tracing.processing_span(@type) do |process_span|
+        msgs = @psub.fetch(batch, params)
+        msgs.map do |msg|
+          Polyn::Tracing.subscribe_span(@type, msg, links: [process_span]) do |span|
+            updated_msg = process_message(msg)
+            Polyn::Tracing.span_attributes(span,
+              nats:    @nats,
+              type:    @type,
+              event:   updated_msg.data,
+              payload: msg.data)
+            updated_msg
+          end
         end
-
-        msg.data = event
-        msg
       end
+    end
+
+    private
+
+    def process_message(msg)
+      msg   = msg.clone
+      msg   = Polyn::Nats::Msg.new(msg)
+      event = @serializer.deserialize(msg.data)
+      if event.is_a?(Polyn::Errors::Error)
+        msg.term
+        raise event
+      end
+
+      msg.data = event
+      msg
     end
   end
 end

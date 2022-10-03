@@ -7,6 +7,8 @@ RSpec.describe Polyn::PullSubscriber do
   let(:js) { nats.jetstream }
   let(:store_name) { "PULL_SUBSCRIBER_TEST_STORE" }
   let(:stream_name) { "PULL_SUBSCRIBER_TEST_STREAM" }
+  let(:exporter) { EXPORTER }
+  let(:spans) { exporter.finished_spans }
   let(:schema_store) do
     Polyn::SchemaStore.new(nats, name: store_name, schemas: {
       "calc.add.v1" => JSON.generate({
@@ -48,6 +50,26 @@ RSpec.describe Polyn::PullSubscriber do
       expect(msg.data).to be_a(Polyn::Event)
       expect(msg.data.data[:a]).to eq(1)
       expect(msg.data.data[:b]).to eq(2)
+
+      # Tracing
+      expect(spans.length).to eq(3)
+
+      send_span    = spans.find { |span| span.name.include?("send") }
+      receive_span = spans.find { |span| span.name.include?("receive") }
+      process_span = spans.find { |span| span.name.include?("process") }
+
+      expect(receive_span.name).to eq("calc.add.v1 receive")
+      expect(receive_span.kind).to eq("CONSUMER")
+      expect(receive_span.parent_span_id).to eq(send_span.span_id)
+      expect(receive_span.links[0].span_context.span_id).to eq(process_span.span_id)
+      expect(receive_span.attributes).to eq({
+        "messaging.system"                     => "NATS",
+        "messaging.destination"                => "calc.add.v1",
+        "messaging.protocol"                   => "Polyn",
+        "messaging.url"                        => nats.uri.to_s,
+        "messaging.message_id"                 => msg.data.id,
+        "messaging.message_payload_size_bytes" => JSON.generate(msg.data.to_h).bytesize,
+      })
     end
 
     it "invalid message sends ACKTERM" do

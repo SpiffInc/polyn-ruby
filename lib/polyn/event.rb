@@ -76,7 +76,6 @@ module Polyn
       @time            = hash.fetch(:time, Time.now.utc.iso8601)
       @data            = hash.fetch(:data)
       @datacontenttype = hash.fetch(:datacontenttype, "application/json")
-      @polyntrace      = self.class.build_polyntrace(hash[:triggered_by])
       @polyndata       = {
         clientlang:        "ruby",
         clientlangversion: RUBY_VERSION,
@@ -93,7 +92,6 @@ module Polyn
         "time"            => time,
         "data"            => Utils::Hash.deep_stringify_keys(data),
         "datacontenttype" => datacontenttype,
-        "polyntrace"      => Utils::Hash.deep_stringify_keys(polyntrace),
         "polyndata"       => Utils::Hash.deep_stringify_keys(polyndata),
       }
     end
@@ -101,15 +99,20 @@ module Polyn
     ##
     # Get the Event `source` prefixed with reverse domain name
     def self.full_source(source = nil)
-      root = Polyn.configuration.source_root
-      name = Polyn::Naming.dot_to_colon("#{domain}:#{root}")
+      root    = Polyn.configuration.source_root
+      parts   = [domain, root]
+      combine = lambda do |items|
+        items.map { |part| Polyn::Naming.dot_to_colon(part) }.join(":")
+      end
+      name    = combine.call(parts)
 
       if source
         Polyn::Naming.validate_source_name!(source)
-        "#{name}:#{Polyn::Naming.dot_to_colon(source)}"
-      else
-        name
+        source = source.gsub(/(#{name}){1}:?/, "")
+        parts << source unless source.empty?
       end
+
+      combine.call(parts)
     end
 
     ##
@@ -117,18 +120,6 @@ module Polyn
     def self.full_type(type)
       Polyn::Naming.validate_event_type!(type)
       "#{domain}.#{Polyn::Naming.trim_domain_prefix(type)}"
-    end
-
-    ##
-    # Use a triggering event to build the polyntrace of a new event
-    def self.build_polyntrace(triggered_by)
-      return [] unless triggered_by
-
-      triggered_by.polyntrace.concat([{
-        id:   triggered_by.id,
-        type: triggered_by.type,
-        time: triggered_by.time,
-      }])
     end
 
     def self.domain

@@ -6,6 +6,8 @@ RSpec.describe Polyn do
   let(:nats) { NATS.connect }
   let(:js) { nats.jetstream }
   let(:store_name) { "POLYN_TEST_STORE" }
+  let(:exporter) { EXPORTER }
+  let(:spans) { exporter.finished_spans }
   let(:schema_store) do
     Polyn::SchemaStore.new(nats, name: store_name, schemas: {
       "calc.mult.v1" => JSON.generate({
@@ -23,6 +25,10 @@ RSpec.describe Polyn do
     })
   end
 
+  before(:each) do
+    exporter.reset
+  end
+
   subject do
     described_class.connect(nats, store_name: store_name, schema_store: schema_store)
   end
@@ -38,9 +44,11 @@ RSpec.describe Polyn do
     end
 
     it "publishes a message" do
+      now = Time.now.iso8601
       subject.publish("calc.mult.v1", {
-        a: 1,
-        b: 2,
+        a:         1,
+        b:         2,
+        timestamp: now,
       })
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
@@ -51,26 +59,27 @@ RSpec.describe Polyn do
       expect(event["source"]).to eq("com:test:user:backend")
       expect(event["data"]["a"]).to eq(1)
       expect(event["data"]["b"]).to eq(2)
-    end
+      expect(event["data"]["timestamp"]).to eq(now)
 
-    it "adds triggered_by to polyntrace" do
-      first_event = Polyn::Event.new({ type: "first.event", data: "foo" })
+      # Tracing
+      span = spans.first
 
-      subject.publish("calc.mult.v1", {
-        a: 1,
-        b: 2,
-      }, triggered_by: first_event)
+      expect(spans.length).to eq(1)
 
-      msg = get_message("calc.mult.v1", "my_consumer", "CALC")
+      # https://www.w3.org/TR/trace-context/#traceparent-header
+      expect(msg.header["traceparent"]).to eq("00-#{span.hex_trace_id}-#{span.hex_span_id}-01")
 
-      event = JSON.parse(msg.data)
-      expect(event["polyntrace"]).to eq([
-                                          {
-                                            "id"   => first_event.id,
-                                            "type" => first_event.type,
-                                            "time" => first_event.time,
-                                          },
-                                        ])
+      expect(spans.length).to eq(1)
+      expect(span.name).to eq("calc.mult.v1 send")
+      expect(span.kind).to eq("PRODUCER")
+      expect(span.attributes).to eq({
+        "messaging.system"                     => "NATS",
+        "messaging.destination"                => "calc.mult.v1",
+        "messaging.protocol"                   => "Polyn",
+        "messaging.url"                        => nats.uri.to_s,
+        "messaging.message_id"                 => event["id"],
+        "messaging.message_payload_size_bytes" => msg.data.bytesize,
+      })
     end
 
     it "always includes a Nats-Msg-Id header" do
@@ -81,10 +90,10 @@ RSpec.describe Polyn do
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
 
-      expect(msg.header).to eq({ "Nats-Msg-Id" => JSON.parse(msg.data)["id"] })
+      expect(msg.header["Nats-Msg-Id"]).to eq(JSON.parse(msg.data)["id"])
     end
 
-    it "can include a header" do
+    it "can include a custom header" do
       subject.publish("calc.mult.v1", {
         a: 1,
         b: 2,
@@ -92,10 +101,9 @@ RSpec.describe Polyn do
 
       msg = get_message("calc.mult.v1", "my_consumer", "CALC")
 
-      expect(msg.header).to eq({
-        "Nats-Msg-Id"  => JSON.parse(msg.data)["id"],
-        "a header key" => "a header value",
-      })
+      expect(msg.header["a header key"]).to eq("a header value")
+      expect(msg.header["Nats-Msg-Id"]).to eq(JSON.parse(msg.data)["id"])
+      expect(msg.header["traceparent"]).to be_truthy
     end
 
     it "raises if msg doesn't conform to schema" do
@@ -115,6 +123,7 @@ RSpec.describe Polyn do
       expect do
         subject.pull_subscribe("calc mult v1")
       end.to raise_error(Polyn::Errors::ValidationError)
+      js.delete_stream("CALC")
     end
 
     it "raises if optional source invalid" do
@@ -123,6 +132,7 @@ RSpec.describe Polyn do
       expect do
         subject.pull_subscribe("calc.mult.v1", source: "foo bar")
       end.to raise_error(Polyn::Errors::ValidationError)
+      js.delete_stream("CALC")
     end
 
     it "raises if consumer was not created in NATS" do
@@ -135,6 +145,7 @@ RSpec.describe Polyn do
       js.add_stream(name: "CALC", subjects: ["calc.mult.v1"])
       js.add_consumer("CALC", durable_name: "user_backend_calc_mult_v1")
       expect(subject.pull_subscribe("calc.mult.v1")).to be_a(Polyn::PullSubscriber)
+      js.delete_stream("CALC")
     end
   end
 
@@ -159,6 +170,22 @@ RSpec.describe Polyn do
       expect(msgs[0].data).to be_a(Polyn::Event)
       expect(msgs[0].data.data[:a]).to eq(1)
       expect(msgs[0].data.data[:b]).to eq(2)
+
+      # Tracing
+      span = spans[1]
+
+      expect(spans.length).to eq(2)
+      expect(span.name).to eq("calc.mult.v1 receive")
+      expect(span.kind).to eq("CONSUMER")
+      expect(span.parent_span_id).to eq(spans[0].span_id)
+      expect(span.attributes).to eq({
+        "messaging.system"                     => "NATS",
+        "messaging.destination"                => "calc.mult.v1",
+        "messaging.protocol"                   => "Polyn",
+        "messaging.url"                        => nats.uri.to_s,
+        "messaging.message_id"                 => msgs[0].data.id,
+        "messaging.message_payload_size_bytes" => JSON.generate(msgs[0].data.to_h).bytesize,
+      })
     end
   end
 

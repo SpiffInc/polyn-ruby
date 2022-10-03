@@ -8,6 +8,8 @@ module Polyn
       @nats = nats
     end
 
+    attr_reader :nats
+
     def publish(type, json, reply, **opts)
       @nats.publish(type, json, reply, **opts)
     end

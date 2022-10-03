@@ -78,15 +78,6 @@ Add `:source` to make the `source` of the event more specific
 polyn.publish("user.created.v1", { name: "Mary" }, source: "new.users")
 ```
 
-Add `:triggered_by` to add a triggering event to the `polyntrace`
-
-```ruby
-polyn = Polyn.connect(nats)
-
-event = Polyn::Event.new
-polyn.publish("user.created.v1", { name: "Mary" }, triggered_by: event)
-```
-
 You can also include options of `:header` and/or `:reply_to` to passthrough to NATS
 
 ### Consuming a Stream
@@ -164,6 +155,12 @@ Following the test setup instructions replaces *most* `Polyn` calls to NATS with
 Despite mocking some NATS functionality you will still need a running nats-server for your testing.
 When the tests start it will load all your schemas. The tests themselves will also use the running server to verify
 stream and consumer configuration information. This hybrid mocking approach is intended to give isolation and reliability while also ensuring correct integration.
+
+## Observability
+
+### Tracing
+
+Polyn uses [OpenTelemetry](https://opentelemetry.io/) to create distributed traces that will connect sent and received events in different services. Your application will need the [`opentelemetry-sdk` gem](https://opentelemetry.io/docs/instrumentation/ruby/getting-started/) installed to collect the trace information.
 
 ## Development
 
